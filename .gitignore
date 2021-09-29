@@ -1,2 +1,4 @@
-*.gz
+*.tar.gz
+*.idea
+venv
 datasets/cifar-100-python
