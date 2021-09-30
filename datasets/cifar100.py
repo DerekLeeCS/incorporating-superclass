@@ -38,6 +38,9 @@ class CIFAR100(Dataset):
         # Reshapes each image into 32x32 and 3 channels (RGB)
         dict_data[b'data'] = np.reshape(dict_data[b'data'], [-1, 3, 32, 32]).transpose([0, 2, 3, 1])
 
+        # Normalize images
+        dict_data[b'data'] = dict_data[b'data'] / 255
+
         return dict_data
 
     def get_num_classes(self) -> int:
@@ -54,3 +57,4 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
     plt.imshow(data[b'data'][0])
     plt.show()
+    print(data[b'data'][0])

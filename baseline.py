@@ -229,10 +229,10 @@ if __name__ == '__main__':
     data_test = dataset.get_data(False)
     num_classes = dataset.get_num_classes()
 
-    # Extract and normalize data
-    img_train = data_train[b'data'] / 255
+    # Extract data
+    img_train = data_train[b'data']
     label_train = data_train[b'fine_labels']
-    img_test = data_test[b'data'] / 255
+    img_test = data_test[b'data']
     label_test = data_test[b'fine_labels']
 
     # Train / Valid Split

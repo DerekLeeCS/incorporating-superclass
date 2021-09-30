@@ -7,6 +7,7 @@ class Dataset(abc.ABC):
 
     @abc.abstractmethod
     def get_data(self, is_training: bool) -> Dict:
+        """Returns a dictionary containing the images and labels. The images are normalized from 0 to 1."""
         pass
 
     @abc.abstractmethod
