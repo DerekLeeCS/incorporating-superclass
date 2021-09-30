@@ -1,6 +1,7 @@
 *.tar.gz
 *.idea
 *.pyc
-logs
 venv
+logs
+checkpoints
 datasets/cifar-100-python

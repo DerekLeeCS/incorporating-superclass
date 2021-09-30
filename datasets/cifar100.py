@@ -2,6 +2,8 @@ from pathlib import Path
 from typing import Dict
 import pickle
 
+import numpy as np
+
 from datasetInterface import Dataset
 
 
@@ -33,6 +35,9 @@ class CIFAR100(Dataset):
         }
         dict_data.update(self.unpickle(str(file_name)))
 
+        # Reshapes each image into 32x32 and 3 channels (RGB)
+        dict_data[b'data'] = np.reshape(dict_data[b'data'], [-1, 3, 32, 32]).transpose([0, 2, 3, 1])
+
         return dict_data
 
     def get_num_classes(self) -> int:
@@ -44,3 +49,8 @@ if __name__ == '__main__':
     data = dataset.get_data(False)
     print(data.keys())
     print(data[b'coarse_labels'])
+
+    # Display an image
+    import matplotlib.pyplot as plt
+    plt.imshow(data[b'data'][0])
+    plt.show()

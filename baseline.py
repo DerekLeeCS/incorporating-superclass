@@ -229,14 +229,11 @@ if __name__ == '__main__':
     data_test = dataset.get_data(False)
     num_classes = dataset.get_num_classes()
 
-    img_train = data_train[b'data']
+    # Extract and normalize data
+    img_train = data_train[b'data'] / 255
     label_train = data_train[b'fine_labels']
-    img_test = data_test[b'data']
+    img_test = data_test[b'data'] / 255
     label_test = data_test[b'fine_labels']
-
-    # Reshapes each image into 32x32 and 3 channels ( RGB )
-    img_train = np.reshape(img_train, [-1, 32, 32, 3], order='F')
-    img_test = np.reshape(img_test, [-1, 32, 32, 3], order='F')
 
     # Train / Valid Split
     train_img, valid_img, train_label, valid_label = train_test_split(img_train, label_train, test_size=VALID_SIZE)
