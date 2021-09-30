@@ -1,4 +1,6 @@
 *.tar.gz
 *.idea
+*.pyc
+logs
 venv
 datasets/cifar-100-python

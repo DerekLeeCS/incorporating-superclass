@@ -8,3 +8,7 @@ class Dataset(abc.ABC):
     @abc.abstractmethod
     def getData(self, isTraining: bool) -> Dict:
         pass
+
+    @abc.abstractmethod
+    def getNumClasses(self) -> int:
+        pass
