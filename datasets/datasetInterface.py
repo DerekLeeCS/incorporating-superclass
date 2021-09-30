@@ -6,9 +6,9 @@ class Dataset(abc.ABC):
     """This class defines an interface for retrieving data from a specific dataset."""
 
     @abc.abstractmethod
-    def getData(self, isTraining: bool) -> Dict:
+    def get_data(self, is_training: bool) -> Dict:
         pass
 
     @abc.abstractmethod
-    def getNumClasses(self) -> int:
+    def get_num_classes(self) -> int:
         pass

@@ -6,9 +6,9 @@ from datasetInterface import Dataset
 
 
 class CIFAR100(Dataset):
-    _fileTrain = Path(__file__, '../cifar-100-python/train')
-    _fileTest = Path(__file__, '../cifar-100-python/test')
-    _numClasses = 100
+    _file_train = Path(__file__, '../cifar-100-python/train')
+    _file_test = Path(__file__, '../cifar-100-python/test')
+    _num_classes = 100
 
     """This function processes an uncompressed file from the CIFAR100 dataset into a dictionary.
     The dataset and the function is from:
@@ -19,28 +19,28 @@ class CIFAR100(Dataset):
             dict = pickle.load(fo, encoding='bytes')
         return dict
 
-    def getData(self, isTraining: bool) -> Dict:
-        if isTraining:
-            fileName = self._fileTrain
+    def get_data(self, is_training: bool) -> Dict:
+        if is_training:
+            file_name = self._file_train
         else:
-            fileName = self._fileTest
+            file_name = self._file_test
 
         # Defines which dictionary keys to keep from the unpickled file
-        dictData = {
+        dict_data = {
             b'fine_labels': [],
             b'coarse_labels': [],
             b'data': []
         }
-        dictData.update(self.unpickle(str(fileName)))
+        dict_data.update(self.unpickle(str(file_name)))
 
-        return dictData
+        return dict_data
 
-    def getNumClasses(self) -> int:
-        return self._numClasses
+    def get_num_classes(self) -> int:
+        return self._num_classes
 
 
 if __name__ == '__main__':
     dataset = CIFAR100()
-    data = dataset.getData(False)
+    data = dataset.get_data(False)
     print(data.keys())
     print(data[b'coarse_labels'])

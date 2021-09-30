@@ -57,8 +57,8 @@ class IdentityBlock(tf.keras.Model):
                                              kernel_regularizer=REGULARIZER)
         self.bn2c = tf.keras.layers.BatchNormalization()
 
-    def call(self, inputTensor, training=False):
-        x = inputTensor
+    def call(self, input_tensor, training=False):
+        x = input_tensor
 
         # Block 1
         x = self.bn2a(x, training=training)
@@ -76,7 +76,7 @@ class IdentityBlock(tf.keras.Model):
         x = self.conv2c(x)
 
         # Output
-        x += inputTensor
+        x += input_tensor
 
         return x
 
@@ -105,9 +105,9 @@ class ConvBlock(tf.keras.Model):
                                                     kernel_regularizer=REGULARIZER)
         self.bn2Shortcut = tf.keras.layers.BatchNormalization()
 
-    def call(self, inputTensor, training=False):
-        x = inputTensor
-        xShort = inputTensor
+    def call(self, input_tensor, training=False):
+        x = input_tensor
+        x_short = input_tensor
 
         # Block 1
         x = self.bn2a(x, training=training)
@@ -125,18 +125,18 @@ class ConvBlock(tf.keras.Model):
         x = self.conv2c(x)
 
         # Shortcut
-        xShort = self.bn2Shortcut(xShort, training=training)
-        xShort = tf.nn.relu(xShort)
-        xShort = self.conv2Shortcut(xShort)
+        x_short = self.bn2Shortcut(x_short, training=training)
+        x_short = tf.nn.relu(x_short)
+        x_short = self.conv2Shortcut(x_short)
 
         # Output
-        x += xShort
+        x += x_short
 
         return x
 
 
 class ResNet50(tf.Module):
-    def __init__(self, numClasses: int):
+    def __init__(self, num_classes: int):
         self.model = tf.keras.models.Sequential()
 
         self.model.add(tf.keras.layers.ZeroPadding2D((3, 3)))
@@ -170,14 +170,12 @@ class ResNet50(tf.Module):
 
         # Output
         self.model.add(tf.keras.layers.Flatten())
-        self.model.add(tf.keras.layers.Dense(numClasses, activation='softmax', kernel_initializer='he_normal'))
+        self.model.add(tf.keras.layers.Dense(num_classes, activation='softmax', kernel_initializer='he_normal'))
 
-    def train(self, dataGenTrain, trainImg, trainLabel, validImg, validLabel):
-        lrdecay = tf.keras.callbacks.LearningRateScheduler(self.lrdecay)  # Learning rate decay
+    def train(self, data_gen_train, train_img, train_label, valid_img, valid_label):
+        lrdecay = tf.keras.callbacks.LearningRateScheduler(self.lrdecay)
         self.model.compile(loss=tf.keras.losses.SparseCategoricalCrossentropy(),
                            optimizer=OPTIMIZER, metrics=METRIC)
-
-        trainSteps = int(trainImg.shape[0] / BATCH_SIZE)
 
         # Used for TensorBoard
         log_dir = "logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -192,12 +190,12 @@ class ResNet50(tf.Module):
             period=20,  # Saves every 20 epochs
             save_best_only=True)
 
-        self.history = self.model.fit(dataGenTrain.flow(trainImg, trainLabel, batch_size=BATCH_SIZE), epochs=NUM_EPOCHS,
-                                      validation_data=(validImg, validLabel),
+        self.history = self.model.fit(data_gen_train.flow(train_img, train_label, batch_size=BATCH_SIZE), epochs=NUM_EPOCHS,
+                                      validation_data=(valid_img, valid_label),
                                       callbacks=[lrdecay, tensorboard_callback, cp_callback])
 
-    def test(self, testImg, testLabel):
-        self.model.evaluate(testImg, testLabel)
+    def test(self, test_img, test_label):
+        self.model.evaluate(test_img, test_label)
 
     def lrdecay(self, epoch):
         lr = 1e-3
@@ -213,7 +211,7 @@ class ResNet50(tf.Module):
         return lr
 
     # Plots accuracy over time
-    def plotAccuracy(self):
+    def plot_accuracy(self):
         plt.figure(figsize=(FIG_WIDTH, FIG_HEIGHT))
         plt.plot(self.history.history[PLOT_METRIC])
         plt.plot(self.history.history['val_' + PLOT_METRIC])
@@ -227,37 +225,37 @@ class ResNet50(tf.Module):
 if __name__ == '__main__':
     # Get data
     dataset = CIFAR100()
-    dataTrain = dataset.getData(True)
-    dataTest = dataset.getData(False)
-    numClasses = dataset.getNumClasses()
+    data_train = dataset.get_data(True)
+    data_test = dataset.get_data(False)
+    num_classes = dataset.get_num_classes()
 
-    imgTrain = dataTrain[b'data']
-    labelTrain = dataTrain[b'fine_labels']
-    imgTest = dataTest[b'data']
-    labelTest = dataTest[b'fine_labels']
+    img_train = data_train[b'data']
+    label_train = data_train[b'fine_labels']
+    img_test = data_test[b'data']
+    label_test = data_test[b'fine_labels']
 
     # Reshapes each image into 32x32 and 3 channels ( RGB )
-    imgTrain = np.reshape(imgTrain, [-1, 32, 32, 3], order='F')
-    imgTest = np.reshape(imgTest, [-1, 32, 32, 3], order='F')
+    img_train = np.reshape(img_train, [-1, 32, 32, 3], order='F')
+    img_test = np.reshape(img_test, [-1, 32, 32, 3], order='F')
 
     # Train / Valid Split
-    trainImg, validImg, trainLabel, validLabel = train_test_split(imgTrain, labelTrain, test_size=VALID_SIZE)
+    train_img, valid_img, train_label, valid_label = train_test_split(img_train, label_train, test_size=VALID_SIZE)
 
     # Convert to tensor
-    trainImg = tf.convert_to_tensor(trainImg, dtype=tf.float32)
-    trainLabel = tf.convert_to_tensor(trainLabel)
-    validImg = tf.convert_to_tensor(validImg, dtype=tf.float32)
-    validLabel = tf.convert_to_tensor(validLabel)
-    testImg = tf.convert_to_tensor(imgTest, dtype=tf.float32)
-    testLabel = tf.convert_to_tensor(labelTest)
+    train_img = tf.convert_to_tensor(train_img, dtype=tf.float32)
+    train_label = tf.convert_to_tensor(train_label)
+    valid_img = tf.convert_to_tensor(valid_img, dtype=tf.float32)
+    valid_label = tf.convert_to_tensor(valid_label)
+    test_img = tf.convert_to_tensor(img_test, dtype=tf.float32)
+    test_label = tf.convert_to_tensor(label_test)
 
     # Data Augmentation
-    dataGenTrain = tf.keras.preprocessing.image.ImageDataGenerator(rotation_range=15, width_shift_range=0.1,
-                                                                   height_shift_range=0.1, horizontal_flip=True)
-    dataGenTrain.fit(trainImg)
+    data_gen_train = tf.keras.preprocessing.image.ImageDataGenerator(rotation_range=15, width_shift_range=0.1,
+                                                                     height_shift_range=0.1, horizontal_flip=True)
+    data_gen_train.fit(train_img)
 
     # Run model
-    model = ResNet50(numClasses)
-    model.train(dataGenTrain, trainImg, trainLabel, validImg, validLabel)
-    model.test(testImg, testLabel)
-    model.plotAccuracy()
+    model = ResNet50(num_classes)
+    model.train(data_gen_train, train_img, train_label, valid_img, valid_label)
+    model.test(test_img, test_label)
+    model.plot_accuracy()
