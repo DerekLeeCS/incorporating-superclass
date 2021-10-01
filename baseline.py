@@ -70,8 +70,7 @@ class IdentityBlock(tf.keras.Model):
                                              kernel_regularizer=REGULARIZER)
         self.bn2c = tf.keras.layers.BatchNormalization()
 
-
-    def call(self, input_tensor, training: bool = False):
+    def call(self, input_tensor, training: bool = False, **kwargs):
         x = input_tensor
         x_short = input_tensor
 
@@ -103,9 +102,11 @@ class IdentityBlock(tf.keras.Model):
 
 class ResNet50(tf.Module):
     def __init__(self, num_classes: int):
+        super(ResNet50, self).__init__()
         self.model = tf.keras.models.Sequential()
 
-        self.model.add(tf.keras.layers.Conv2D(64, (3, 3), strides=(1, 1)))  # This is a 7x7 convolution with 2x2 stride in the original paper
+        self.model.add(tf.keras.layers.Conv2D(64, (3, 3), strides=(
+            1, 1)))  # This is a 7x7 convolution with 2x2 stride in the original paper
         # self.model.add(tf.keras.layers.BatchNormalization())
         # self.model.add(tf.keras.layers.ReLU())
         self.model.add(tf.keras.layers.MaxPooling2D((3, 3), strides=(2, 2)))
@@ -138,7 +139,7 @@ class ResNet50(tf.Module):
         self.model.add(tf.keras.layers.Dense(num_classes, activation='softmax', kernel_initializer='he_normal'))
 
     def train(self, train_dataset, valid_dataset):
-        lrdecay = tf.keras.callbacks.LearningRateScheduler(self._lrdecay)
+        lr_decay = tf.keras.callbacks.LearningRateScheduler(self._lr_decay)
         self.model.compile(loss=tf.keras.losses.SparseCategoricalCrossentropy(),
                            optimizer=OPTIMIZER, metrics=METRIC)
 
@@ -156,23 +157,10 @@ class ResNet50(tf.Module):
             save_best_only=True)
 
         self.history = self.model.fit(train_dataset, epochs=NUM_EPOCHS, validation_data=valid_dataset,
-                                      callbacks=[lrdecay, tensorboard_callback, cp_callback])
+                                      callbacks=[lr_decay, tensorboard_callback, cp_callback])
 
     def test(self, test_img, test_label):
         self.model.evaluate(test_img, test_label)
-
-    def _lrdecay(self, epoch):
-        lr = 1e-3
-        if epoch > 180:
-            lr *= 0.5e-3
-        elif epoch > 160:
-            lr *= 1e-3
-        elif epoch > 120:
-            lr *= 1e-2
-        elif epoch > 80:
-            lr *= 1e-1
-
-        return lr
 
     # Plots accuracy over time
     def plot_accuracy(self):
@@ -185,6 +173,20 @@ class ResNet50(tf.Module):
         plt.legend(['Train', 'Valid'], loc='upper left')
         plt.show()
 
+    @staticmethod
+    def _lr_decay(epoch):
+        lr = 1e-3
+        if epoch > 180:
+            lr *= 0.5e-3
+        elif epoch > 160:
+            lr *= 1e-3
+        elif epoch > 120:
+            lr *= 1e-2
+        elif epoch > 80:
+            lr *= 1e-1
+
+        return lr
+
 
 def preprocess(image, label):
     image = tf.image.resize(image, [IMG_SIZE, IMG_SIZE])
@@ -194,7 +196,7 @@ def preprocess(image, label):
 def augment(image, label):
     seed = rng.make_seeds(2)[0]
     new_seed = tf.random.experimental.stateless_split(seed, num=1)[0, :]
-    image = tf.image.resize_with_crop_or_pad(image, IMG_SIZE+6, IMG_SIZE+6)
+    image = tf.image.resize_with_crop_or_pad(image, IMG_SIZE + 6, IMG_SIZE + 6)
     image = tf.image.stateless_random_crop(image, size=[IMG_SIZE, IMG_SIZE, 3], seed=seed)
     image = tf.image.stateless_random_flip_left_right(image, seed=new_seed)
     image = tf.image.stateless_random_brightness(image, max_delta=0.5, seed=new_seed)
