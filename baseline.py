@@ -107,9 +107,10 @@ class ResNet50(tf.Module):
         super(ResNet50, self).__init__()
         self.model = tf.keras.models.Sequential()
 
-        self.model.add(tf.keras.layers.Conv2D(64, (3, 3), strides=(1, 1)))  # This is a 7x7 convolution with 2x2 stride in the original paper
-        # self.model.add(tf.keras.layers.BatchNormalization())
-        # self.model.add(tf.keras.layers.ReLU())
+        self.model.add(tf.keras.layers.ZeroPadding2D((3, 3)))
+        self.model.add(tf.keras.layers.Conv2D(64, (7, 7), strides=(2, 2)))
+        self.model.add(tf.keras.layers.BatchNormalization())
+        self.model.add(tf.keras.layers.ReLU())
         self.model.add(tf.keras.layers.MaxPooling2D((3, 3), strides=(2, 2)))
 
         # Stage 1
@@ -137,9 +138,9 @@ class ResNet50(tf.Module):
 
         # Output
         self.model.add(tf.keras.layers.Flatten())
-        self.model.add(tf.keras.layers.Dense(num_classes, activation='softmax', kernel_initializer='he_normal'))
+        self.model.add(tf.keras.layers.Dense(num_classes, activation='softmax'))
 
-    def train(self, train_dataset: tf.data.Dataset, valid_dataset: tf.data.Dataset):
+    def train(self, train_dataset: tf.data.Dataset, valid_dataset: tf.data.Dataset, steps_per_epoch: int):
         lr_decay = tf.keras.callbacks.LearningRateScheduler(self._lr_decay)
         self.model.compile(loss=tf.keras.losses.SparseCategoricalCrossentropy(),
                            optimizer=OPTIMIZER, metrics=METRIC)
@@ -158,6 +159,7 @@ class ResNet50(tf.Module):
             save_best_only=True)
 
         self.history = self.model.fit(train_dataset, epochs=NUM_EPOCHS, validation_data=valid_dataset,
+                                      steps_per_epoch=steps_per_epoch,
                                       callbacks=[lr_decay, tensorboard_callback, cp_callback])
 
     def test(self, test_dataset: tf.data.Dataset):
@@ -177,9 +179,7 @@ class ResNet50(tf.Module):
     @staticmethod
     def _lr_decay(epoch: int):
         lr = 1e-3
-        if epoch > 180:
-            lr *= 0.5e-3
-        elif epoch > 160:
+        if epoch > 160:
             lr *= 1e-3
         elif epoch > 120:
             lr *= 1e-2
@@ -195,11 +195,9 @@ def preprocess(image: tf.Tensor, label: tf.Tensor):
 
 
 def augment(image: tf.Tensor, label: tf.Tensor):
-    seed = rng.make_seeds(2)[0]
-    new_seed = tf.random.experimental.stateless_split(seed, num=1)[0, :]
-    image = tf.image.stateless_random_flip_left_right(image, seed=new_seed)
-    image = tf.image.stateless_random_brightness(image, max_delta=0.5, seed=new_seed)
-    image = tf.clip_by_value(image, 0, 1)
+    # seed = rng.make_seeds(2)[0]
+    # new_seed = tf.random.experimental.stateless_split(seed, num=1)[0, :]
+    # image = tf.image.stateless_random_flip_left_right(image, seed=new_seed)
     return image, label
 
 
@@ -219,15 +217,27 @@ if __name__ == '__main__':
     # Train / Valid Split
     train_img, valid_img, train_label, valid_label = train_test_split(train_img, train_label, test_size=VALID_SIZE)
 
+    # Convert to tensor
+    train_img = tf.convert_to_tensor(train_img, dtype=tf.float32)
+    train_label = tf.convert_to_tensor(train_label)
+    steps_per_epoch = int(tf.shape(train_img)[0] / BATCH_SIZE)
+
+    # Data Augmentation
+    data_gen_train = tf.keras.preprocessing.image.ImageDataGenerator(rotation_range=15, width_shift_range=0.1,
+                                                                     height_shift_range=0.1, horizontal_flip=True)
+    data_gen_train.fit(train_img)
+
     # Convert to Dataset
     train_dataset = (
-        tf.data.Dataset.from_tensor_slices((train_img, train_label))
-        .shuffle(40000)
-        .batch(BATCH_SIZE)
-        .map(preprocess, num_parallel_calls=AUTOTUNE)
-        .map(augment, num_parallel_calls=AUTOTUNE)
-        .cache()
-        .prefetch(AUTOTUNE)
+        tf.data.Dataset.from_generator(lambda: data_gen_train.flow(train_img, train_label, batch_size=BATCH_SIZE),
+                                       output_types=(tf.float32, tf.int32),
+                                       output_shapes=(
+                                           tf.TensorShape((BATCH_SIZE, IMG_SIZE, IMG_SIZE, 3)),
+                                           tf.TensorShape((BATCH_SIZE,))))
+            .map(preprocess, num_parallel_calls=AUTOTUNE)
+            .map(augment, num_parallel_calls=AUTOTUNE)
+            .cache()
+            .prefetch(AUTOTUNE)
     )
     valid_dataset = (
         tf.data.Dataset.from_tensor_slices((valid_img, valid_label))
@@ -246,6 +256,6 @@ if __name__ == '__main__':
 
     # Run model
     model = ResNet50(num_classes)
-    model.train(train_dataset, valid_dataset)
+    model.train(train_dataset, valid_dataset, steps_per_epoch)
     model.test(test_dataset)
     model.plot_accuracy()
