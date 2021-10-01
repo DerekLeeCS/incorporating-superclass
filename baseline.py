@@ -1,5 +1,4 @@
 import tensorflow as tf
-import numpy as np
 import datetime
 
 from matplotlib import pyplot as plt
@@ -40,13 +39,23 @@ FIG_WIDTH = 15
 class IdentityBlock(tf.keras.Model):
     """Identity Block for a ResNet with Full Pre-activation"""
 
-    def __init__(self, filters):
+    def __init__(self, filters, s: int = None):
         super(IdentityBlock, self).__init__(name='')
         f1, f2 = filters
         k = 3  # Kernel size
 
-        self.conv2a = tf.keras.layers.Conv2D(f1, kernel_size=(1, 1), strides=(1, 1), padding='valid',
-                                             kernel_regularizer=REGULARIZER)
+        if s is not None:
+            self.downsample = True
+            self.conv2a = tf.keras.layers.Conv2D(f1, kernel_size=(1, 1), strides=(s, s), padding='valid',
+                                                 kernel_regularizer=REGULARIZER)
+            self.conv2Shortcut = tf.keras.layers.Conv2D(f2, kernel_size=(1, 1), strides=(s, s), padding='valid',
+                                                        kernel_regularizer=REGULARIZER)
+            self.bn2Shortcut = tf.keras.layers.BatchNormalization()
+        else:
+            self.downsample = False
+            self.conv2a = tf.keras.layers.Conv2D(f1, kernel_size=(1, 1), strides=(1, 1), padding='valid',
+                                                 kernel_regularizer=REGULARIZER)
+
         self.bn2a = tf.keras.layers.BatchNormalization()
 
         self.conv2b = tf.keras.layers.Conv2D(f1, kernel_size=(k, k), strides=(1, 1), padding='same',
@@ -57,77 +66,30 @@ class IdentityBlock(tf.keras.Model):
                                              kernel_regularizer=REGULARIZER)
         self.bn2c = tf.keras.layers.BatchNormalization()
 
-    def call(self, input_tensor, training=False):
-        x = input_tensor
 
-        # Block 1
-        x = self.bn2a(x, training=training)
-        x = tf.nn.leaky_relu(x)
-        x = self.conv2a(x)
-
-        # Block 2
-        x = self.bn2b(x, training=training)
-        x = tf.nn.leaky_relu(x)
-        x = self.conv2b(x)
-
-        # Block 3
-        x = self.bn2c(x, training=training)
-        x = tf.nn.relu(x)
-        x = self.conv2c(x)
-
-        # Output
-        x += input_tensor
-
-        return x
-
-
-class ConvBlock(tf.keras.Model):
-    """Convolutional Block for a ResNet with Full Pre-activation"""
-
-    def __init__(self, filters, s):
-        super(ConvBlock, self).__init__(name='')
-        f1, f2 = filters
-        k = 3  # Kernel size
-
-        self.conv2a = tf.keras.layers.Conv2D(f1, kernel_size=(1, 1), strides=(s, s), padding='valid',
-                                             kernel_regularizer=REGULARIZER)
-        self.bn2a = tf.keras.layers.BatchNormalization()
-
-        self.conv2b = tf.keras.layers.Conv2D(f1, kernel_size=(k, k), strides=(1, 1), padding='same',
-                                             kernel_regularizer=REGULARIZER)
-        self.bn2b = tf.keras.layers.BatchNormalization()
-
-        self.conv2c = tf.keras.layers.Conv2D(f2, kernel_size=(1, 1), strides=(1, 1), padding='valid',
-                                             kernel_regularizer=REGULARIZER)
-        self.bn2c = tf.keras.layers.BatchNormalization()
-
-        self.conv2Shortcut = tf.keras.layers.Conv2D(f2, kernel_size=(1, 1), strides=(s, s), padding='valid',
-                                                    kernel_regularizer=REGULARIZER)
-        self.bn2Shortcut = tf.keras.layers.BatchNormalization()
-
-    def call(self, input_tensor, training=False):
+    def call(self, input_tensor, training: bool = False):
         x = input_tensor
         x_short = input_tensor
 
+        if self.downsample:
+            x_short = self.bn2Shortcut(x_short, training=training)
+            x_short = tf.nn.relu(x_short)
+            x_short = self.conv2Shortcut(x_short)
+
         # Block 1
         x = self.bn2a(x, training=training)
-        x = tf.nn.leaky_relu(x)
+        x = tf.nn.relu(x)
         x = self.conv2a(x)
 
         # Block 2
         x = self.bn2b(x, training=training)
-        x = tf.nn.leaky_relu(x)
+        x = tf.nn.relu(x)
         x = self.conv2b(x)
 
         # Block 3
         x = self.bn2c(x, training=training)
         x = tf.nn.relu(x)
         x = self.conv2c(x)
-
-        # Shortcut
-        x_short = self.bn2Shortcut(x_short, training=training)
-        x_short = tf.nn.relu(x_short)
-        x_short = self.conv2Shortcut(x_short)
 
         # Output
         x += x_short
@@ -139,29 +101,28 @@ class ResNet50(tf.Module):
     def __init__(self, num_classes: int):
         self.model = tf.keras.models.Sequential()
 
-        self.model.add(tf.keras.layers.ZeroPadding2D((3, 3)))
-        self.model.add(tf.keras.layers.Conv2D(64, (7, 7), strides=(2, 2)))
-        self.model.add(tf.keras.layers.BatchNormalization())
-        self.model.add(tf.keras.layers.ReLU())
+        self.model.add(tf.keras.layers.Conv2D(64, (3, 3), strides=(1, 1)))  # This is a 7x7 convolution with 2x2 stride in the original paper
+        # self.model.add(tf.keras.layers.BatchNormalization())
+        # self.model.add(tf.keras.layers.ReLU())
         self.model.add(tf.keras.layers.MaxPooling2D((3, 3), strides=(2, 2)))
 
         # Stage 1
-        self.model.add(ConvBlock(filters=[64, 256], s=1))
+        self.model.add(IdentityBlock(filters=[64, 256], s=1))
         for _ in range(2):
             self.model.add(IdentityBlock(filters=[64, 256]))
 
         # Stage 2
-        self.model.add(ConvBlock(filters=[128, 512], s=2))
+        self.model.add(IdentityBlock(filters=[128, 512], s=2))
         for _ in range(3):
             self.model.add(IdentityBlock(filters=[128, 512]))
 
         # Stage 3
-        self.model.add(ConvBlock(filters=[256, 1024], s=2))
+        self.model.add(IdentityBlock(filters=[256, 1024], s=2))
         for _ in range(5):
             self.model.add(IdentityBlock(filters=[256, 1024]))
 
         # Stage 4
-        self.model.add(ConvBlock(filters=[512, 2048], s=2))
+        self.model.add(IdentityBlock(filters=[512, 2048], s=2))
         for _ in range(2):
             self.model.add(IdentityBlock(filters=[512, 2048]))
 
@@ -173,7 +134,7 @@ class ResNet50(tf.Module):
         self.model.add(tf.keras.layers.Dense(num_classes, activation='softmax', kernel_initializer='he_normal'))
 
     def train(self, data_gen_train, train_img, train_label, valid_img, valid_label):
-        lrdecay = tf.keras.callbacks.LearningRateScheduler(self.lrdecay)
+        lrdecay = tf.keras.callbacks.LearningRateScheduler(self._lrdecay)
         self.model.compile(loss=tf.keras.losses.SparseCategoricalCrossentropy(),
                            optimizer=OPTIMIZER, metrics=METRIC)
 
@@ -197,7 +158,7 @@ class ResNet50(tf.Module):
     def test(self, test_img, test_label):
         self.model.evaluate(test_img, test_label)
 
-    def lrdecay(self, epoch):
+    def _lrdecay(self, epoch):
         lr = 1e-3
         if epoch > 180:
             lr *= 0.5e-3
