@@ -22,18 +22,22 @@ if gpus:
         print(e)
 
 # Constants
+IMG_SIZE = 32
 NUM_EPOCHS = 160
-BATCH_SIZE = 64
+BATCH_SIZE = 128
 VALID_SIZE = 0.2
 OPTIMIZER = tf.keras.optimizers.Adam()
 REGULARIZER = tf.keras.regularizers.l2(0.001)
 METRIC = tf.keras.metrics.SparseTopKCategoricalAccuracy(k=5)
+AUTOTUNE = tf.data.experimental.AUTOTUNE
 
 # Plot Constants
 PLOT_METRIC = 'sparse_top_k_categorical_accuracy'
 PLOT_LABEL = 'Top 5 Accuracy'
 FIG_HEIGHT = 5
 FIG_WIDTH = 15
+
+rng = tf.random.Generator.from_seed(123, alg='philox')
 
 
 class IdentityBlock(tf.keras.Model):
@@ -133,7 +137,7 @@ class ResNet50(tf.Module):
         self.model.add(tf.keras.layers.Flatten())
         self.model.add(tf.keras.layers.Dense(num_classes, activation='softmax', kernel_initializer='he_normal'))
 
-    def train(self, data_gen_train, train_img, train_label, valid_img, valid_label):
+    def train(self, train_dataset, valid_dataset):
         lrdecay = tf.keras.callbacks.LearningRateScheduler(self._lrdecay)
         self.model.compile(loss=tf.keras.losses.SparseCategoricalCrossentropy(),
                            optimizer=OPTIMIZER, metrics=METRIC)
@@ -151,8 +155,7 @@ class ResNet50(tf.Module):
             period=20,  # Saves every 20 epochs
             save_best_only=True)
 
-        self.history = self.model.fit(data_gen_train.flow(train_img, train_label, batch_size=BATCH_SIZE), epochs=NUM_EPOCHS,
-                                      validation_data=(valid_img, valid_label),
+        self.history = self.model.fit(train_dataset, epochs=NUM_EPOCHS, validation_data=valid_dataset,
                                       callbacks=[lrdecay, tensorboard_callback, cp_callback])
 
     def test(self, test_img, test_label):
@@ -183,6 +186,22 @@ class ResNet50(tf.Module):
         plt.show()
 
 
+def preprocess(image, label):
+    image = tf.image.resize(image, [IMG_SIZE, IMG_SIZE])
+    return image, label
+
+
+def augment(image, label):
+    seed = rng.make_seeds(2)[0]
+    new_seed = tf.random.experimental.stateless_split(seed, num=1)[0, :]
+    image = tf.image.resize_with_crop_or_pad(image, IMG_SIZE+6, IMG_SIZE+6)
+    image = tf.image.stateless_random_crop(image, size=[IMG_SIZE, IMG_SIZE, 3], seed=seed)
+    image = tf.image.stateless_random_flip_left_right(image, seed=new_seed)
+    image = tf.image.stateless_random_brightness(image, max_delta=0.5, seed=new_seed)
+    image = tf.clip_by_value(image, 0, 1)
+    return image, label
+
+
 if __name__ == '__main__':
     # Get data
     dataset = CIFAR100()
@@ -191,29 +210,41 @@ if __name__ == '__main__':
     num_classes = dataset.get_num_classes()
 
     # Extract data
-    img_train = data_train[b'data']
-    label_train = data_train[b'fine_labels']
-    img_test = data_test[b'data']
-    label_test = data_test[b'fine_labels']
+    train_img = data_train[b'data']
+    train_label = data_train[b'fine_labels']
+    test_img = data_test[b'data']
+    test_label = data_test[b'fine_labels']
 
     # Train / Valid Split
-    train_img, valid_img, train_label, valid_label = train_test_split(img_train, label_train, test_size=VALID_SIZE)
+    train_img, valid_img, train_label, valid_label = train_test_split(train_img, train_label, test_size=VALID_SIZE)
 
-    # Convert to tensor
-    train_img = tf.convert_to_tensor(train_img, dtype=tf.float32)
-    train_label = tf.convert_to_tensor(train_label)
-    valid_img = tf.convert_to_tensor(valid_img, dtype=tf.float32)
-    valid_label = tf.convert_to_tensor(valid_label)
-    test_img = tf.convert_to_tensor(img_test, dtype=tf.float32)
-    test_label = tf.convert_to_tensor(label_test)
-
-    # Data Augmentation
-    data_gen_train = tf.keras.preprocessing.image.ImageDataGenerator(rotation_range=15, width_shift_range=0.1,
-                                                                     height_shift_range=0.1, horizontal_flip=True)
-    data_gen_train.fit(train_img)
+    # Convert to Dataset
+    train_dataset = (
+        tf.data.Dataset.from_tensor_slices((train_img, train_label))
+        .shuffle(10000)
+        .map(preprocess, num_parallel_calls=AUTOTUNE)
+        .map(augment, num_parallel_calls=AUTOTUNE)
+        .batch(BATCH_SIZE)
+        .cache()
+        .prefetch(AUTOTUNE)
+    )
+    valid_dataset = (
+        tf.data.Dataset.from_tensor_slices((valid_img, valid_label))
+        .map(preprocess, num_parallel_calls=AUTOTUNE)
+        .batch(BATCH_SIZE)
+        .cache()
+        .prefetch(AUTOTUNE)
+    )
+    test_dataset = (
+        tf.data.Dataset.from_tensor_slices((test_img, test_label))
+        .map(preprocess, num_parallel_calls=AUTOTUNE)
+        .batch(BATCH_SIZE)
+        .cache()
+        .prefetch(AUTOTUNE)
+    )
 
     # Run model
     model = ResNet50(num_classes)
-    model.train(data_gen_train, train_img, train_label, valid_img, valid_label)
+    model.train(train_dataset, valid_dataset)
     model.test(test_img, test_label)
     model.plot_accuracy()
