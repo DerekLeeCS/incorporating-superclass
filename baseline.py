@@ -234,10 +234,9 @@ if __name__ == '__main__':
                                        output_shapes=(
                                            tf.TensorShape((BATCH_SIZE, IMG_SIZE, IMG_SIZE, 3)),
                                            tf.TensorShape((BATCH_SIZE,))))
-            .map(preprocess, num_parallel_calls=AUTOTUNE)
-            .map(augment, num_parallel_calls=AUTOTUNE)
-            .cache()
-            .prefetch(AUTOTUNE)
+        .map(preprocess, num_parallel_calls=AUTOTUNE)
+        .map(augment, num_parallel_calls=AUTOTUNE)
+        .prefetch(AUTOTUNE)
     )
     valid_dataset = (
         tf.data.Dataset.from_tensor_slices((valid_img, valid_label))
