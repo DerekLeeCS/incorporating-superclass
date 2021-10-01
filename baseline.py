@@ -1,3 +1,5 @@
+from typing import Tuple
+
 import tensorflow as tf
 import datetime
 
@@ -43,7 +45,7 @@ rng = tf.random.Generator.from_seed(123, alg='philox')
 class IdentityBlock(tf.keras.Model):
     """Identity Block for a ResNet with Full Pre-activation"""
 
-    def __init__(self, filters, s: int = None):
+    def __init__(self, filters: Tuple[int, int], s: int = None):
         super(IdentityBlock, self).__init__(name='')
         f1, f2 = filters
         k = 3  # Kernel size
@@ -70,7 +72,7 @@ class IdentityBlock(tf.keras.Model):
                                              kernel_regularizer=REGULARIZER)
         self.bn2c = tf.keras.layers.BatchNormalization()
 
-    def call(self, input_tensor, training: bool = False, **kwargs):
+    def call(self, input_tensor: tf.Tensor, training: bool = False, **kwargs):
         x = input_tensor
         x_short = input_tensor
 
@@ -111,24 +113,24 @@ class ResNet50(tf.Module):
         self.model.add(tf.keras.layers.MaxPooling2D((3, 3), strides=(2, 2)))
 
         # Stage 1
-        self.model.add(IdentityBlock(filters=[64, 256], s=1))
+        self.model.add(IdentityBlock(filters=(64, 256), s=1))
         for _ in range(2):
-            self.model.add(IdentityBlock(filters=[64, 256]))
+            self.model.add(IdentityBlock(filters=(64, 256)))
 
         # Stage 2
-        self.model.add(IdentityBlock(filters=[128, 512], s=2))
+        self.model.add(IdentityBlock(filters=(128, 512), s=2))
         for _ in range(3):
-            self.model.add(IdentityBlock(filters=[128, 512]))
+            self.model.add(IdentityBlock(filters=(128, 512)))
 
         # Stage 3
-        self.model.add(IdentityBlock(filters=[256, 1024], s=2))
+        self.model.add(IdentityBlock(filters=(256, 1024), s=2))
         for _ in range(5):
-            self.model.add(IdentityBlock(filters=[256, 1024]))
+            self.model.add(IdentityBlock(filters=(256, 1024)))
 
         # Stage 4
-        self.model.add(IdentityBlock(filters=[512, 2048], s=2))
+        self.model.add(IdentityBlock(filters=(512, 2048), s=2))
         for _ in range(2):
-            self.model.add(IdentityBlock(filters=[512, 2048]))
+            self.model.add(IdentityBlock(filters=(512, 2048)))
 
         # Pooling
         self.model.add(tf.keras.layers.AveragePooling2D((2, 2), padding='same'))
@@ -137,7 +139,7 @@ class ResNet50(tf.Module):
         self.model.add(tf.keras.layers.Flatten())
         self.model.add(tf.keras.layers.Dense(num_classes, activation='softmax', kernel_initializer='he_normal'))
 
-    def train(self, train_dataset, valid_dataset):
+    def train(self, train_dataset: tf.data.Dataset, valid_dataset: tf.data.Dataset):
         lr_decay = tf.keras.callbacks.LearningRateScheduler(self._lr_decay)
         self.model.compile(loss=tf.keras.losses.SparseCategoricalCrossentropy(),
                            optimizer=OPTIMIZER, metrics=METRIC)
@@ -158,7 +160,7 @@ class ResNet50(tf.Module):
         self.history = self.model.fit(train_dataset, epochs=NUM_EPOCHS, validation_data=valid_dataset,
                                       callbacks=[lr_decay, tensorboard_callback, cp_callback])
 
-    def test(self, test_dataset):
+    def test(self, test_dataset: tf.data.Dataset):
         self.model.evaluate(test_dataset)
 
     # Plots accuracy over time
@@ -173,7 +175,7 @@ class ResNet50(tf.Module):
         plt.show()
 
     @staticmethod
-    def _lr_decay(epoch):
+    def _lr_decay(epoch: int):
         lr = 1e-3
         if epoch > 180:
             lr *= 0.5e-3
@@ -187,12 +189,12 @@ class ResNet50(tf.Module):
         return lr
 
 
-def preprocess(image, label):
+def preprocess(image: tf.Tensor, label: tf.Tensor):
     image = tf.image.resize(image, [IMG_SIZE, IMG_SIZE])
     return image, label
 
 
-def augment(image, label):
+def augment(image: tf.Tensor, label: tf.Tensor):
     seed = rng.make_seeds(2)[0]
     new_seed = tf.random.experimental.stateless_split(seed, num=1)[0, :]
     image = tf.image.stateless_random_flip_left_right(image, seed=new_seed)
