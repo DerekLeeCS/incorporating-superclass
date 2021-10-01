@@ -24,7 +24,7 @@ if gpus:
 # Constants
 IMG_SIZE = 32
 NUM_EPOCHS = 160
-BATCH_SIZE = 128
+BATCH_SIZE = 64
 VALID_SIZE = 0.2
 OPTIMIZER = tf.keras.optimizers.Adam()
 REGULARIZER = tf.keras.regularizers.l2(0.001)
@@ -105,8 +105,7 @@ class ResNet50(tf.Module):
         super(ResNet50, self).__init__()
         self.model = tf.keras.models.Sequential()
 
-        self.model.add(tf.keras.layers.Conv2D(64, (3, 3), strides=(
-            1, 1)))  # This is a 7x7 convolution with 2x2 stride in the original paper
+        self.model.add(tf.keras.layers.Conv2D(64, (3, 3), strides=(1, 1)))  # This is a 7x7 convolution with 2x2 stride in the original paper
         # self.model.add(tf.keras.layers.BatchNormalization())
         # self.model.add(tf.keras.layers.ReLU())
         self.model.add(tf.keras.layers.MaxPooling2D((3, 3), strides=(2, 2)))
@@ -159,8 +158,8 @@ class ResNet50(tf.Module):
         self.history = self.model.fit(train_dataset, epochs=NUM_EPOCHS, validation_data=valid_dataset,
                                       callbacks=[lr_decay, tensorboard_callback, cp_callback])
 
-    def test(self, test_img, test_label):
-        self.model.evaluate(test_img, test_label)
+    def test(self, test_dataset):
+        self.model.evaluate(test_dataset)
 
     # Plots accuracy over time
     def plot_accuracy(self):
@@ -196,8 +195,6 @@ def preprocess(image, label):
 def augment(image, label):
     seed = rng.make_seeds(2)[0]
     new_seed = tf.random.experimental.stateless_split(seed, num=1)[0, :]
-    image = tf.image.resize_with_crop_or_pad(image, IMG_SIZE + 6, IMG_SIZE + 6)
-    image = tf.image.stateless_random_crop(image, size=[IMG_SIZE, IMG_SIZE, 3], seed=seed)
     image = tf.image.stateless_random_flip_left_right(image, seed=new_seed)
     image = tf.image.stateless_random_brightness(image, max_delta=0.5, seed=new_seed)
     image = tf.clip_by_value(image, 0, 1)
@@ -223,24 +220,24 @@ if __name__ == '__main__':
     # Convert to Dataset
     train_dataset = (
         tf.data.Dataset.from_tensor_slices((train_img, train_label))
-        .shuffle(10000)
+        .shuffle(40000)
+        .batch(BATCH_SIZE)
         .map(preprocess, num_parallel_calls=AUTOTUNE)
         .map(augment, num_parallel_calls=AUTOTUNE)
-        .batch(BATCH_SIZE)
         .cache()
         .prefetch(AUTOTUNE)
     )
     valid_dataset = (
         tf.data.Dataset.from_tensor_slices((valid_img, valid_label))
-        .map(preprocess, num_parallel_calls=AUTOTUNE)
         .batch(BATCH_SIZE)
+        .map(preprocess, num_parallel_calls=AUTOTUNE)
         .cache()
         .prefetch(AUTOTUNE)
     )
     test_dataset = (
         tf.data.Dataset.from_tensor_slices((test_img, test_label))
-        .map(preprocess, num_parallel_calls=AUTOTUNE)
         .batch(BATCH_SIZE)
+        .map(preprocess, num_parallel_calls=AUTOTUNE)
         .cache()
         .prefetch(AUTOTUNE)
     )
@@ -248,5 +245,5 @@ if __name__ == '__main__':
     # Run model
     model = ResNet50(num_classes)
     model.train(train_dataset, valid_dataset)
-    model.test(test_img, test_label)
+    model.test(test_dataset)
     model.plot_accuracy()
