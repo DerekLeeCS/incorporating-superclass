@@ -32,6 +32,7 @@ OPTIMIZER = tf.keras.optimizers.Adam()
 REGULARIZER = tf.keras.regularizers.l2(0.001)
 METRIC = tf.keras.metrics.SparseTopKCategoricalAccuracy(k=5)
 AUTOTUNE = tf.data.experimental.AUTOTUNE
+IS_TRAINING = True
 
 # Plot Constants
 PLOT_METRIC = 'sparse_top_k_categorical_accuracy'
@@ -103,10 +104,12 @@ class IdentityBlock(tf.keras.Model):
 
 
 class ResNet50(tf.Module):
+    checkpoint_path = "checkpoints/"
+    saved_model_path = "saved_model/ResNet50/"
+
     def __init__(self, num_classes: int):
         super(ResNet50, self).__init__()
         self.model = tf.keras.models.Sequential()
-
         self.model.add(tf.keras.layers.ZeroPadding2D((3, 3)))
         self.model.add(tf.keras.layers.Conv2D(64, (7, 7), strides=(2, 2)))
         self.model.add(tf.keras.layers.BatchNormalization())
@@ -140,19 +143,19 @@ class ResNet50(tf.Module):
         self.model.add(tf.keras.layers.Flatten())
         self.model.add(tf.keras.layers.Dense(num_classes, activation='softmax'))
 
-    def train(self, train_dataset: tf.data.Dataset, valid_dataset: tf.data.Dataset, steps_per_epoch: int):
-        lr_decay = tf.keras.callbacks.LearningRateScheduler(self._lr_decay)
         self.model.compile(loss=tf.keras.losses.SparseCategoricalCrossentropy(),
                            optimizer=OPTIMIZER, metrics=METRIC)
+
+    def train(self, train_dataset: tf.data.Dataset, valid_dataset: tf.data.Dataset, steps_per_epoch: int):
+        lr_decay = tf.keras.callbacks.LearningRateScheduler(self._lr_decay)
 
         # Used for TensorBoard
         log_dir = "logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
         tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
 
         # Create a callback that saves the model's weights
-        checkpoint_path = "checkpoints/"
         cp_callback = tf.keras.callbacks.ModelCheckpoint(
-            filepath=checkpoint_path,
+            filepath=self.checkpoint_path,
             verbose=1,
             save_weights_only=True,
             period=20,  # Saves every 20 epochs
@@ -164,6 +167,12 @@ class ResNet50(tf.Module):
 
     def test(self, test_dataset: tf.data.Dataset):
         self.model.evaluate(test_dataset)
+
+    def load_weights(self):
+        self.model.load_weights(self.checkpoint_path)
+
+    def save(self):
+        self.model.save(self.saved_model_path)
 
     # Plots accuracy over time
     def plot_accuracy(self):
@@ -255,6 +264,11 @@ if __name__ == '__main__':
 
     # Run model
     model = ResNet50(num_classes)
-    model.train(train_dataset, valid_dataset, steps_per_epoch)
+    if IS_TRAINING:
+        model.train(train_dataset, valid_dataset, steps_per_epoch)
+        model.plot_accuracy()
+        model.save()
+    else:
+        model.load_weights()
+
     model.test(test_dataset)
-    model.plot_accuracy()
