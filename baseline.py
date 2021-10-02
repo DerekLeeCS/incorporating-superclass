@@ -43,11 +43,11 @@ FIG_WIDTH = 15
 rng = tf.random.Generator.from_seed(123, alg='philox')
 
 
-class IdentityBlock(tf.keras.Model):
-    """Identity Block for a ResNet with Full Pre-activation"""
+class ResidualBlock(tf.keras.Model):
+    """Residual Block for a ResNet with Full Pre-activation"""
 
     def __init__(self, filters: Tuple[int, int], s: int = None):
-        super(IdentityBlock, self).__init__(name='')
+        super(ResidualBlock, self).__init__(name='')
         f1, f2 = filters
         k = 3  # Kernel size
 
@@ -110,31 +110,31 @@ class ResNet50(tf.Module):
     def __init__(self, num_classes: int):
         super(ResNet50, self).__init__()
         self.model = tf.keras.models.Sequential()
-        self.model.add(tf.keras.layers.ZeroPadding2D((3, 3)))
+
         self.model.add(tf.keras.layers.Conv2D(64, (7, 7), strides=(2, 2)))
         self.model.add(tf.keras.layers.BatchNormalization())
         self.model.add(tf.keras.layers.ReLU())
         self.model.add(tf.keras.layers.MaxPooling2D((3, 3), strides=(2, 2)))
 
         # Stage 1
-        self.model.add(IdentityBlock(filters=(64, 256), s=1))
+        self.model.add(ResidualBlock(filters=(64, 256), s=1))
         for _ in range(2):
-            self.model.add(IdentityBlock(filters=(64, 256)))
+            self.model.add(ResidualBlock(filters=(64, 256)))
 
         # Stage 2
-        self.model.add(IdentityBlock(filters=(128, 512), s=2))
+        self.model.add(ResidualBlock(filters=(128, 512), s=2))
         for _ in range(3):
-            self.model.add(IdentityBlock(filters=(128, 512)))
+            self.model.add(ResidualBlock(filters=(128, 512)))
 
         # Stage 3
-        self.model.add(IdentityBlock(filters=(256, 1024), s=2))
+        self.model.add(ResidualBlock(filters=(256, 1024), s=2))
         for _ in range(5):
-            self.model.add(IdentityBlock(filters=(256, 1024)))
+            self.model.add(ResidualBlock(filters=(256, 1024)))
 
         # Stage 4
-        self.model.add(IdentityBlock(filters=(512, 2048), s=2))
+        self.model.add(ResidualBlock(filters=(512, 2048), s=2))
         for _ in range(2):
-            self.model.add(IdentityBlock(filters=(512, 2048)))
+            self.model.add(ResidualBlock(filters=(512, 2048)))
 
         # Pooling
         self.model.add(tf.keras.layers.AveragePooling2D((2, 2), padding='same'))
@@ -239,10 +239,9 @@ if __name__ == '__main__':
     # Convert to Dataset
     train_dataset = (
         tf.data.Dataset.from_generator(lambda: data_gen_train.flow(train_img, train_label, batch_size=BATCH_SIZE),
-                                       output_types=(tf.float32, tf.int32),
-                                       output_shapes=(
-                                           tf.TensorShape((BATCH_SIZE, IMG_SIZE, IMG_SIZE, 3)),
-                                           tf.TensorShape((BATCH_SIZE,))))
+                                       output_signature=(
+                                           tf.TensorSpec(shape=(BATCH_SIZE, IMG_SIZE, IMG_SIZE, 3), dtype=tf.float32),
+                                           tf.TensorSpec(shape=(BATCH_SIZE,), dtype=tf.int32)))
         .map(preprocess, num_parallel_calls=AUTOTUNE)
         .map(augment, num_parallel_calls=AUTOTUNE)
         .prefetch(AUTOTUNE)
