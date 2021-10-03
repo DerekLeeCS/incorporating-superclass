@@ -1,2 +1,0 @@
-Validation - 0.8018 
-Test - 0.8028

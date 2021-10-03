@@ -44,7 +44,7 @@ rng = tf.random.Generator.from_seed(123, alg='philox')
 
 
 class ResidualBlock(tf.keras.Model):
-    """Residual Block for a ResNet with Full Pre-activation"""
+    """Residual Block for a ResNet without Full Pre-activation"""
 
     def __init__(self, filters: Tuple[int, int], s: int = None):
         super(ResidualBlock, self).__init__(name='')
@@ -83,19 +83,19 @@ class ResidualBlock(tf.keras.Model):
             x_short = self.conv2Shortcut(x_short)
 
         # Block 1
+        x = self.conv2a(x)
         x = self.bn2a(x, training=training)
         x = tf.nn.relu(x)
-        x = self.conv2a(x)
 
         # Block 2
+        x = self.conv2b(x)
         x = self.bn2b(x, training=training)
         x = tf.nn.relu(x)
-        x = self.conv2b(x)
 
         # Block 3
+        x = self.conv2c(x)
         x = self.bn2c(x, training=training)
         x = tf.nn.relu(x)
-        x = self.conv2c(x)
 
         # Output
         x += x_short
@@ -105,7 +105,7 @@ class ResidualBlock(tf.keras.Model):
 
 class ResNet50(tf.Module):
     checkpoint_path = "checkpoints/"
-    saved_model_path = "saved_model/ResNet50/"
+    saved_model_path = "saved_model/ResNet50 - Standard/"
 
     def __init__(self, num_classes: int):
         super(ResNet50, self).__init__()
