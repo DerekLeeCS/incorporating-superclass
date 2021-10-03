@@ -29,7 +29,7 @@ NUM_EPOCHS = 160
 BATCH_SIZE = 64
 VALID_SIZE = 0.2
 OPTIMIZER = tf.keras.optimizers.Adam()
-REGULARIZER = tf.keras.regularizers.l2(0.001)
+REGULARIZER = tf.keras.regularizers.l2(1e-3)
 METRIC = tf.keras.metrics.SparseTopKCategoricalAccuracy(k=5)
 AUTOTUNE = tf.data.experimental.AUTOTUNE
 IS_TRAINING = True
@@ -110,6 +110,7 @@ class ResNet50(tf.Module):
     def __init__(self, num_classes: int):
         super(ResNet50, self).__init__()
         self.model = tf.keras.models.Sequential()
+        self.model.add(tf.keras.layers.InputLayer(input_shape=(IMG_SIZE, IMG_SIZE, 3)))
 
         self.model.add(tf.keras.layers.Conv2D(64, (7, 7), strides=(2, 2)))
         self.model.add(tf.keras.layers.BatchNormalization())
@@ -188,9 +189,7 @@ class ResNet50(tf.Module):
     @staticmethod
     def _lr_decay(epoch: int):
         lr = 1e-3
-        if epoch > 160:
-            lr *= 1e-3
-        elif epoch > 120:
+        if epoch > 120:
             lr *= 1e-2
         elif epoch > 80:
             lr *= 1e-1
@@ -204,9 +203,6 @@ def preprocess(image: tf.Tensor, label: tf.Tensor):
 
 
 def augment(image: tf.Tensor, label: tf.Tensor):
-    # seed = rng.make_seeds(2)[0]
-    # new_seed = tf.random.experimental.stateless_split(seed, num=1)[0, :]
-    # image = tf.image.stateless_random_flip_left_right(image, seed=new_seed)
     return image, label
 
 
