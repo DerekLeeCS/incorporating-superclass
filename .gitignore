@@ -2,6 +2,6 @@
 *.idea
 *.pyc
 venv
-checkpoints
-saved_model
-datasets/cifar-100-python
+src/checkpoints
+src/saved_model
+src/datasets/cifar-100-python
