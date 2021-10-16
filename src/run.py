@@ -5,6 +5,21 @@ from sklearn.model_selection import train_test_split
 from datasets.cifar100 import CIFAR100
 from baseline import ResNet50
 
+# From:
+# https://www.tensorflow.org/guide/gpu#limiting_gpu_memory_growth
+gpus = tf.config.experimental.list_physical_devices('GPU')
+if gpus:
+    # Restrict TensorFlow to only allocate 4GB of memory on the first GPU
+    try:
+        tf.config.experimental.set_virtual_device_configuration(
+            gpus[0],
+            [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=4096)])
+        logical_gpus = tf.config.experimental.list_logical_devices('GPU')
+        print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
+    except RuntimeError as e:
+        # Virtual devices must be set before GPUs have been initialized
+        print(e)
+
 # Constants
 IMG_SIZE = 32
 BATCH_SIZE = 64
@@ -14,7 +29,6 @@ AUTOTUNE = tf.data.experimental.AUTOTUNE
 OPTIMIZER = tf.keras.optimizers.Adam()
 METRIC = tf.keras.metrics.SparseTopKCategoricalAccuracy(k=5)
 IS_TRAINING = True
-
 
 if __name__ == '__main__':
     # Get data

@@ -3,6 +3,7 @@ from typing import Dict
 import pickle
 
 import numpy as np
+from matplotlib import pyplot as plt
 
 from datasetInterface import Dataset
 
@@ -12,11 +13,11 @@ class CIFAR100(Dataset):
     _file_test = Path(__file__, '../cifar-100-python/test')
     _num_classes = 100
 
-    """This function processes an uncompressed file from the CIFAR100 dataset into a dictionary.
-    The dataset and the function is from:
-    https://www.cs.toronto.edu/~kriz/cifar.html
-    """
     def unpickle(self, file: str) -> Dict:
+        """This function processes an uncompressed file from the CIFAR-100 dataset into a dictionary.
+        The dataset and the function is from:
+        https://www.cs.toronto.edu/~kriz/cifar.html
+        """
         with open(file, 'rb') as fo:
             dict = pickle.load(fo, encoding='bytes')
         return dict
@@ -54,7 +55,6 @@ if __name__ == '__main__':
     print(data[b'coarse_labels'])
 
     # Display an image
-    import matplotlib.pyplot as plt
     plt.imshow(data[b'data'][0])
     plt.show()
     print(data[b'data'][0])

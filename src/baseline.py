@@ -5,21 +5,6 @@ import datetime
 
 from matplotlib import pyplot as plt
 
-# From:
-# https://www.tensorflow.org/guide/gpu#limiting_gpu_memory_growth
-gpus = tf.config.experimental.list_physical_devices('GPU')
-if gpus:
-    # Restrict TensorFlow to only allocate 4GB of memory on the first GPU
-    try:
-        tf.config.experimental.set_virtual_device_configuration(
-            gpus[0],
-            [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=4096)])
-        logical_gpus = tf.config.experimental.list_logical_devices('GPU')
-        print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
-    except RuntimeError as e:
-        # Virtual devices must be set before GPUs have been initialized
-        print(e)
-
 # Constants
 REGULARIZER = tf.keras.regularizers.l2(1e-3)
 
@@ -94,7 +79,8 @@ class ResNet50(tf.Module):
     checkpoint_path = "checkpoints/"
     saved_model_path = "saved_model/ResNet50/"
 
-    def __init__(self, num_classes: int, img_size: int, optimizer: tf.keras.optimizers.Optimizer, metric: tf.keras.metrics.Metric):
+    def __init__(self, num_classes: int, img_size: int, optimizer: tf.keras.optimizers.Optimizer,
+                 metric: tf.keras.metrics.Metric):
         super(ResNet50, self).__init__()
         self.model = tf.keras.models.Sequential()
         self.model.add(tf.keras.layers.InputLayer(input_shape=(img_size, img_size, 3)))
@@ -134,7 +120,8 @@ class ResNet50(tf.Module):
         self.model.compile(loss=tf.keras.losses.SparseCategoricalCrossentropy(),
                            optimizer=optimizer, metrics=metric)
 
-    def train(self, train_dataset: tf.data.Dataset, valid_dataset: tf.data.Dataset, num_epochs: int, steps_per_epoch: int):
+    def train(self, train_dataset: tf.data.Dataset, valid_dataset: tf.data.Dataset, num_epochs: int,
+              steps_per_epoch: int):
         lr_decay = tf.keras.callbacks.LearningRateScheduler(self._lr_decay)
 
         # Used for TensorBoard
@@ -182,4 +169,3 @@ class ResNet50(tf.Module):
             lr *= 1e-1
 
         return lr
-
