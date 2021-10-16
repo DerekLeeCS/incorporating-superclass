@@ -27,6 +27,7 @@ VALID_SIZE = 0.2
 NUM_EPOCHS = 160
 AUTOTUNE = tf.data.experimental.AUTOTUNE
 OPTIMIZER = tf.keras.optimizers.Adam()
+LOSS = tf.keras.losses.SparseCategoricalCrossentropy()
 METRIC = tf.keras.metrics.SparseTopKCategoricalAccuracy(k=5)
 IS_TRAINING = True
 
@@ -76,7 +77,7 @@ if __name__ == '__main__':
     )
 
     # Run model
-    model = ResNet50(num_classes, IMG_SIZE, OPTIMIZER, METRIC)
+    model = ResNet50(num_classes, IMG_SIZE, LOSS, OPTIMIZER, METRIC)
     if IS_TRAINING:
         model.train(train_dataset, valid_dataset, NUM_EPOCHS, steps_per_epoch)
         model.plot_accuracy()

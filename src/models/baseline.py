@@ -80,9 +80,9 @@ class ResNet50(tf.Module):
     checkpoint_path = "checkpoints/"
     saved_model_path = "saved_model/ResNet50/"
 
-    def __init__(self, num_classes: int, img_size: int, optimizer: tf.keras.optimizers.Optimizer,
-                 metric: tf.keras.metrics.Metric):
-        super(ResNet50, self).__init__()
+    def __init__(self, num_classes: int, img_size: int, loss: tf.keras.losses.Loss,
+                 optimizer: tf.keras.optimizers.Optimizer, metric: tf.keras.metrics.Metric):
+        super().__init__()
         self.model = tf.keras.models.Sequential()
         self.model.add(tf.keras.layers.InputLayer(input_shape=(img_size, img_size, 3)))
 
@@ -118,8 +118,7 @@ class ResNet50(tf.Module):
         self.model.add(tf.keras.layers.Flatten())
         self.model.add(tf.keras.layers.Dense(num_classes, activation='softmax'))
 
-        self.model.compile(loss=tf.keras.losses.SparseCategoricalCrossentropy(),
-                           optimizer=optimizer, metrics=metric)
+        self.model.compile(optimizer=optimizer, loss=loss, metrics=metric)
 
     def train(self, train_dataset: tf.data.Dataset, valid_dataset: tf.data.Dataset, num_epochs: int,
               steps_per_epoch: int):
