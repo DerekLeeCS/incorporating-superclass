@@ -4,9 +4,6 @@ import tensorflow as tf
 import datetime
 
 from matplotlib import pyplot as plt
-from sklearn.model_selection import train_test_split
-
-from datasets.cifar100 import CIFAR100
 
 # From:
 # https://www.tensorflow.org/guide/gpu#limiting_gpu_memory_growth
@@ -24,15 +21,7 @@ if gpus:
         print(e)
 
 # Constants
-IMG_SIZE = 32
-NUM_EPOCHS = 160
-BATCH_SIZE = 64
-VALID_SIZE = 0.2
-OPTIMIZER = tf.keras.optimizers.Adam()
 REGULARIZER = tf.keras.regularizers.l2(1e-3)
-METRIC = tf.keras.metrics.SparseTopKCategoricalAccuracy(k=5)
-AUTOTUNE = tf.data.experimental.AUTOTUNE
-IS_TRAINING = True
 
 # Plot Constants
 PLOT_METRIC = 'sparse_top_k_categorical_accuracy'
@@ -105,10 +94,10 @@ class ResNet50(tf.Module):
     checkpoint_path = "checkpoints/"
     saved_model_path = "saved_model/ResNet50/"
 
-    def __init__(self, num_classes: int):
+    def __init__(self, num_classes: int, img_size: int, optimizer: tf.keras.optimizers.Optimizer, metric: tf.keras.metrics.Metric):
         super(ResNet50, self).__init__()
         self.model = tf.keras.models.Sequential()
-        self.model.add(tf.keras.layers.InputLayer(input_shape=(IMG_SIZE, IMG_SIZE, 3)))
+        self.model.add(tf.keras.layers.InputLayer(input_shape=(img_size, img_size, 3)))
 
         self.model.add(tf.keras.layers.Conv2D(64, (7, 7), strides=(2, 2)))
         self.model.add(tf.keras.layers.BatchNormalization())
@@ -143,9 +132,9 @@ class ResNet50(tf.Module):
         self.model.add(tf.keras.layers.Dense(num_classes, activation='softmax'))
 
         self.model.compile(loss=tf.keras.losses.SparseCategoricalCrossentropy(),
-                           optimizer=OPTIMIZER, metrics=METRIC)
+                           optimizer=optimizer, metrics=metric)
 
-    def train(self, train_dataset: tf.data.Dataset, valid_dataset: tf.data.Dataset, steps_per_epoch: int):
+    def train(self, train_dataset: tf.data.Dataset, valid_dataset: tf.data.Dataset, num_epochs: int, steps_per_epoch: int):
         lr_decay = tf.keras.callbacks.LearningRateScheduler(self._lr_decay)
 
         # Used for TensorBoard
@@ -160,7 +149,7 @@ class ResNet50(tf.Module):
             period=20,  # Saves every 20 epochs
             save_best_only=True)
 
-        self.history = self.model.fit(train_dataset, epochs=NUM_EPOCHS, validation_data=valid_dataset,
+        self.history = self.model.fit(train_dataset, epochs=num_epochs, validation_data=valid_dataset,
                                       steps_per_epoch=steps_per_epoch,
                                       callbacks=[lr_decay, tensorboard_callback, cp_callback])
 
@@ -194,61 +183,3 @@ class ResNet50(tf.Module):
 
         return lr
 
-
-if __name__ == '__main__':
-    # Get data
-    dataset = CIFAR100()
-    data_train = dataset.get_data(True)
-    data_test = dataset.get_data(False)
-    num_classes = dataset.get_num_classes()
-
-    # Extract data
-    train_img = data_train[b'data']
-    train_label = data_train[b'fine_labels']
-    test_img = data_test[b'data']
-    test_label = data_test[b'fine_labels']
-
-    # Train / Valid Split
-    train_img, valid_img, train_label, valid_label = train_test_split(train_img, train_label, test_size=VALID_SIZE)
-
-    # Convert to tensor
-    train_img = tf.convert_to_tensor(train_img, dtype=tf.float32)
-    train_label = tf.convert_to_tensor(train_label)
-    steps_per_epoch = int(tf.shape(train_img)[0] / BATCH_SIZE)
-
-    # Data Augmentation
-    data_gen_train = tf.keras.preprocessing.image.ImageDataGenerator(rotation_range=15, width_shift_range=0.1,
-                                                                     height_shift_range=0.1, horizontal_flip=True)
-    data_gen_train.fit(train_img)
-
-    # Convert to Dataset
-    train_dataset = (
-        tf.data.Dataset.from_generator(lambda: data_gen_train.flow(train_img, train_label, batch_size=BATCH_SIZE),
-                                       output_signature=(
-                                           tf.TensorSpec(shape=(BATCH_SIZE, IMG_SIZE, IMG_SIZE, 3), dtype=tf.float32),
-                                           tf.TensorSpec(shape=(BATCH_SIZE,), dtype=tf.int32)))
-        .prefetch(AUTOTUNE)
-    )
-    valid_dataset = (
-        tf.data.Dataset.from_tensor_slices((valid_img, valid_label))
-        .batch(BATCH_SIZE)
-        .cache()
-        .prefetch(AUTOTUNE)
-    )
-    test_dataset = (
-        tf.data.Dataset.from_tensor_slices((test_img, test_label))
-        .batch(BATCH_SIZE)
-        .cache()
-        .prefetch(AUTOTUNE)
-    )
-
-    # Run model
-    model = ResNet50(num_classes)
-    if IS_TRAINING:
-        model.train(train_dataset, valid_dataset, steps_per_epoch)
-        model.plot_accuracy()
-        model.save()
-    else:
-        model.load_weights()
-
-    model.test(test_dataset)
