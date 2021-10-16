@@ -40,8 +40,6 @@ PLOT_LABEL = 'Top 5 Accuracy'
 FIG_HEIGHT = 5
 FIG_WIDTH = 15
 
-rng = tf.random.Generator.from_seed(123, alg='philox')
-
 
 class ResidualBlock(tf.keras.Model):
     """Residual Block for a ResNet with Full Pre-activation"""
@@ -197,15 +195,6 @@ class ResNet50(tf.Module):
         return lr
 
 
-def preprocess(image: tf.Tensor, label: tf.Tensor):
-    image = tf.image.resize(image, [IMG_SIZE, IMG_SIZE])
-    return image, label
-
-
-def augment(image: tf.Tensor, label: tf.Tensor):
-    return image, label
-
-
 if __name__ == '__main__':
     # Get data
     dataset = CIFAR100()
@@ -238,21 +227,17 @@ if __name__ == '__main__':
                                        output_signature=(
                                            tf.TensorSpec(shape=(BATCH_SIZE, IMG_SIZE, IMG_SIZE, 3), dtype=tf.float32),
                                            tf.TensorSpec(shape=(BATCH_SIZE,), dtype=tf.int32)))
-        .map(preprocess, num_parallel_calls=AUTOTUNE)
-        .map(augment, num_parallel_calls=AUTOTUNE)
         .prefetch(AUTOTUNE)
     )
     valid_dataset = (
         tf.data.Dataset.from_tensor_slices((valid_img, valid_label))
         .batch(BATCH_SIZE)
-        .map(preprocess, num_parallel_calls=AUTOTUNE)
         .cache()
         .prefetch(AUTOTUNE)
     )
     test_dataset = (
         tf.data.Dataset.from_tensor_slices((test_img, test_label))
         .batch(BATCH_SIZE)
-        .map(preprocess, num_parallel_calls=AUTOTUNE)
         .cache()
         .prefetch(AUTOTUNE)
     )
