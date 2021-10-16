@@ -1,3 +1,4 @@
+from abc import ABC
 from typing import Tuple
 
 import tensorflow as tf
@@ -15,7 +16,7 @@ FIG_HEIGHT = 5
 FIG_WIDTH = 15
 
 
-class ResidualBlock(tf.keras.Model):
+class ResidualBlock(tf.keras.Model, ABC):
     """Residual Block for a ResNet with Full Pre-activation"""
 
     def __init__(self, filters: Tuple[int, int], s: int = None):
