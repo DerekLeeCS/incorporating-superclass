@@ -3,7 +3,7 @@ import tensorflow as tf
 from sklearn.model_selection import train_test_split
 
 from datasets.cifar100 import CIFAR100
-from baseline import ResNet50
+from models.baseline import ResNet50
 
 # From:
 # https://www.tensorflow.org/guide/gpu#limiting_gpu_memory_growth
