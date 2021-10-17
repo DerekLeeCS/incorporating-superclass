@@ -5,7 +5,7 @@ import pickle
 import numpy as np
 from matplotlib import pyplot as plt
 
-from datasetInterface import Dataset
+from dataset_interface import Dataset
 
 
 class CIFAR100(Dataset):

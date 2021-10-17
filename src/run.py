@@ -1,5 +1,3 @@
-from typing import List, Tuple
-
 import numpy as np
 import tensorflow as tf
 
@@ -116,7 +114,7 @@ if __name__ == '__main__':
         tf.data.Dataset.from_generator(lambda: data_gen_train.flow(train_img, train_label, batch_size=BATCH_SIZE),
                                        output_signature=(
                                            tf.TensorSpec(shape=(BATCH_SIZE, IMG_SIZE, IMG_SIZE, 3), dtype=tf.float32),
-                                           {k: tf.TensorSpec(shape=(BATCH_SIZE, 1), dtype=tf.int32) for k in train_label}
+                                           {output_name: tf.TensorSpec(shape=(BATCH_SIZE, 1), dtype=tf.int32) for output_name in train_label}
                                        ))
         .prefetch(AUTOTUNE)
     )
@@ -137,8 +135,6 @@ if __name__ == '__main__':
     model = ResNet50WithAux(num_classes, IMG_SIZE, [LOSS, LOSS], OPTIMIZER, METRIC)
     if IS_TRAINING:
         model.train(train_dataset, valid_dataset, NUM_EPOCHS, steps_per_epoch)
-        # model.model.fit_generator(data_gen_train.flow(train_img, train_label, batch_size=BATCH_SIZE), steps_per_epoch, NUM_EPOCHS,
-        #                           validation_data=(valid_img, valid_label))
         model.plot_accuracy()
         model.save()
     else:
