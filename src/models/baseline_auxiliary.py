@@ -7,7 +7,7 @@ from models.base_module import BaseModule
 
 
 class ResNet50WithAux(BaseModule):
-    def __init__(self, num_classes: int, img_size: int, loss: List[tf.keras.losses.Loss],
+    def __init__(self, num_classes: int, num_superclasses: int, img_size: int, loss: List[tf.keras.losses.Loss],
                  optimizer: tf.keras.optimizers.Optimizer, metric: tf.keras.metrics.Metric):
         super().__init__()
         inp = tf.keras.layers.Input(shape=(img_size, img_size, 3))
@@ -36,8 +36,7 @@ class ResNet50WithAux(BaseModule):
         aux = x
         aux = tf.keras.layers.AveragePooling2D((2, 2))(aux)
         aux = tf.keras.layers.Flatten()(aux)
-        aux = tf.keras.layers.Dense(1024, activation='relu')(aux)
-        aux = tf.keras.layers.Dense(20, activation='softmax', name='output_coarse')(aux)
+        aux = tf.keras.layers.Dense(num_superclasses, activation='softmax', name='output_coarse')(aux)
 
         # Stage 4
         x = ResidualBlock(filters=(512, 2048), s=2)(x)
@@ -52,5 +51,5 @@ class ResNet50WithAux(BaseModule):
         out = tf.keras.layers.Dense(num_classes, activation='softmax', name='output_fine')(x)
 
         self.model = tf.keras.Model(inputs=inp, outputs=[out, aux])
-        self.model.compile(optimizer=optimizer, loss=loss, loss_weights=[1, 0.3], metrics=metric)
+        self.model.compile(optimizer=optimizer, loss=loss, loss_weights={'output_coarse': 0.5, 'output_fine': 1}, metrics=metric)
         self.model.summary()

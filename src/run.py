@@ -39,6 +39,7 @@ class MultiOutputDataGenerator(tf.keras.preprocessing.image.ImageDataGenerator):
     From:
     https://github.com/keras-team/keras/issues/12639
     """
+
     def flow(self,
              x,
              y=None,
@@ -79,7 +80,7 @@ if __name__ == '__main__':
     dataset = CIFAR100()
     data_train = dataset.get_data(True)
     data_test = dataset.get_data(False)
-    num_classes = dataset.get_num_classes()
+    num_classes, num_superclasses = dataset.get_num_classes()
 
     # Extract data
     train_img = data_train[b'data']
@@ -114,7 +115,8 @@ if __name__ == '__main__':
         tf.data.Dataset.from_generator(lambda: data_gen_train.flow(train_img, train_label, batch_size=BATCH_SIZE),
                                        output_signature=(
                                            tf.TensorSpec(shape=(BATCH_SIZE, IMG_SIZE, IMG_SIZE, 3), dtype=tf.float32),
-                                           {output_name: tf.TensorSpec(shape=(BATCH_SIZE, 1), dtype=tf.int32) for output_name in train_label}
+                                           {output_name: tf.TensorSpec(shape=(BATCH_SIZE, 1), dtype=tf.int32)
+                                            for output_name in train_label}
                                        ))
         .prefetch(AUTOTUNE)
     )
@@ -132,7 +134,7 @@ if __name__ == '__main__':
     )
 
     # Run model
-    model = ResNet50WithAux(num_classes, IMG_SIZE, [LOSS, LOSS], OPTIMIZER, METRIC)
+    model = ResNet50WithAux(num_classes, num_superclasses, IMG_SIZE, [LOSS, LOSS], OPTIMIZER, METRIC)
     if IS_TRAINING:
         model.train(train_dataset, valid_dataset, NUM_EPOCHS, steps_per_epoch)
         # model.plot_accuracy()

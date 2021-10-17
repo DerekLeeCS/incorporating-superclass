@@ -3,16 +3,16 @@ import datetime
 import tensorflow as tf
 from matplotlib import pyplot as plt
 
-# Plot Constants
-PLOT_METRIC = 'sparse_top_k_categorical_accuracy'
-PLOT_LABEL = 'Top 5 Accuracy'
-FIG_HEIGHT = 5
-FIG_WIDTH = 15
-
 
 class BaseModule(tf.Module):
     checkpoint_path = "checkpoints/"
     saved_model_path = "saved_model/"
+
+    # Plot Constants
+    _plot_metric = 'sparse_top_k_categorical_accuracy'
+    _plot_label = 'Top 5 Accuracy'
+    _fig_height = 5
+    _fig_width = 15
 
     def train(self, train_dataset: tf.data.Dataset, valid_dataset: tf.data.Dataset, num_epochs: int,
               steps_per_epoch: int):
@@ -48,12 +48,12 @@ class BaseModule(tf.Module):
 
     # Plots accuracy over time
     def plot_accuracy(self):
-        plt.figure(figsize=(FIG_WIDTH, FIG_HEIGHT))
-        plt.plot(self.history.history[PLOT_METRIC])
-        plt.plot(self.history.history['val_' + PLOT_METRIC])
-        plt.title('Model ' + PLOT_LABEL)
+        plt.figure(figsize=(self._fig_width, self._fig_height))
+        plt.plot(self.history.history[self._plot_metric])
+        plt.plot(self.history.history['val_' + self._plot_metric])
+        plt.title('Model ' + self._plot_label)
         plt.xlabel('Epochs')
-        plt.ylabel(PLOT_LABEL, rotation='horizontal', ha='right')
+        plt.ylabel(self._plot_label, rotation='horizontal', ha='right')
         plt.legend(['Train', 'Valid'], loc='upper left')
         plt.show()
 

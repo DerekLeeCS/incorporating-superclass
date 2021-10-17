@@ -1,5 +1,5 @@
 import abc
-from typing import Dict
+from typing import Dict, Tuple
 
 
 class Dataset(abc.ABC):
@@ -11,5 +11,6 @@ class Dataset(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def get_num_classes(self) -> int:
+    def get_num_classes(self) -> Tuple[int, int]:
+        """Returns the number of subclasses and superclasses, in that order."""
         pass

@@ -1,17 +1,18 @@
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Tuple
 import pickle
 
 import numpy as np
 from matplotlib import pyplot as plt
 
-from dataset_interface import Dataset
+from datasets.dataset_interface import Dataset
 
 
 class CIFAR100(Dataset):
     _file_train = Path(__file__, '../cifar-100-python/train')
     _file_test = Path(__file__, '../cifar-100-python/test')
     _num_classes = 100
+    _num_superclasses = 20
 
     def unpickle(self, file: str) -> Dict:
         """This function processes an uncompressed file from the CIFAR-100 dataset into a dictionary.
@@ -44,8 +45,8 @@ class CIFAR100(Dataset):
 
         return dict_data
 
-    def get_num_classes(self) -> int:
-        return self._num_classes
+    def get_num_classes(self) -> Tuple[int, int]:
+        return self._num_classes, self._num_superclasses
 
 
 if __name__ == '__main__':
