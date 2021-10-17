@@ -29,14 +29,13 @@ class ResNet50WithAux(BaseModule):
 
         # Stage 3
         x = ResidualBlock(filters=(256, 1024), s=2)(x)
-        for _ in range(4):
+        for _ in range(5):
             x = ResidualBlock(filters=(256, 1024))(x)
 
         # Auxiliary Classifier
         aux = x
+        aux = tf.keras.layers.AveragePooling2D((2, 2))(aux)
         aux = tf.keras.layers.Flatten()(aux)
-        aux = tf.keras.layers.Dense(1024)(aux)
-        aux = tf.keras.layers.ReLU()(aux)
         aux = tf.keras.layers.Dense(20, activation='softmax', name='output_coarse')(aux)
 
         # Stage 4
