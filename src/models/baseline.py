@@ -52,22 +52,22 @@ class ResidualBlock(tf.keras.Model, ABC):
 
         if self.downsample:
             x_short = self.bn2Shortcut(x_short, training=training)
-            x_short = tf.nn.relu(x_short)
+            x_short = tf.keras.layers.ReLU()(x_short)
             x_short = self.conv2Shortcut(x_short)
 
         # Block 1
         x = self.bn2a(x, training=training)
-        x = tf.nn.relu(x)
+        x = tf.keras.layers.ReLU()(x)
         x = self.conv2a(x)
 
         # Block 2
         x = self.bn2b(x, training=training)
-        x = tf.nn.relu(x)
+        x = tf.keras.layers.ReLU()(x)
         x = self.conv2b(x)
 
         # Block 3
         x = self.bn2c(x, training=training)
-        x = tf.nn.relu(x)
+        x = tf.keras.layers.ReLU()(x)
         x = self.conv2c(x)
 
         # Output
@@ -119,6 +119,7 @@ class ResNet50(tf.Module):
         self.model.add(tf.keras.layers.Dense(num_classes, activation='softmax'))
 
         self.model.compile(optimizer=optimizer, loss=loss, metrics=metric)
+        self.model.summary()
 
     def train(self, train_dataset: tf.data.Dataset, valid_dataset: tf.data.Dataset, num_epochs: int,
               steps_per_epoch: int):
