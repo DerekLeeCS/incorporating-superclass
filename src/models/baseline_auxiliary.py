@@ -36,6 +36,7 @@ class ResNet50WithAux(BaseModule):
         aux = x
         aux = tf.keras.layers.AveragePooling2D((2, 2))(aux)
         aux = tf.keras.layers.Flatten()(aux)
+        aux = tf.keras.layers.Dense(1024, activation='relu')(aux)
         aux = tf.keras.layers.Dense(20, activation='softmax', name='output_coarse')(aux)
 
         # Stage 4

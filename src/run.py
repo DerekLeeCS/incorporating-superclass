@@ -135,7 +135,7 @@ if __name__ == '__main__':
     model = ResNet50WithAux(num_classes, IMG_SIZE, [LOSS, LOSS], OPTIMIZER, METRIC)
     if IS_TRAINING:
         model.train(train_dataset, valid_dataset, NUM_EPOCHS, steps_per_epoch)
-        model.plot_accuracy()
+        # model.plot_accuracy()
         model.save()
     else:
         model.load_weights()
