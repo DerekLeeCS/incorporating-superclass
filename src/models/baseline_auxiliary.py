@@ -51,5 +51,6 @@ class ResNet50WithAux(BaseModule):
         out = tf.keras.layers.Dense(num_classes, activation='softmax', name='output_fine')(x)
 
         self.model = tf.keras.Model(inputs=inp, outputs=[out, aux])
-        self.model.compile(optimizer=optimizer, loss=loss, loss_weights={'output_coarse': 0.5, 'output_fine': 1}, metrics=metric)
+        self.model.compile(optimizer=optimizer, loss=loss, loss_weights={'output_coarse': 0.5, 'output_fine': 1},
+                           metrics=metric)
         self.model.summary()
