@@ -4,7 +4,7 @@ from models.baseline import ResidualBlock
 from models.base_module import BaseModule
 
 
-class ResNet50WithAux(BaseModule):
+class SGNet(BaseModule):
     def __init__(self, num_classes: int, num_superclasses: int, img_size: int, loss: tf.keras.losses.Loss,
                  optimizer: tf.keras.optimizers.Optimizer, metric: tf.keras.metrics.Metric):
         super().__init__()
@@ -46,6 +46,7 @@ class ResNet50WithAux(BaseModule):
 
         # Output
         x = tf.keras.layers.Flatten()(x)
+        x = tf.concat([x, aux], -1)
         out_main = tf.keras.layers.Dense(num_classes, activation='softmax', name='output_fine')(x)
 
         self.model = tf.keras.Model(inputs=inp, outputs=[out_main, out_aux])
