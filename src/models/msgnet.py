@@ -4,7 +4,7 @@ from models.baseline import ResidualBlock
 from models.base_module import BaseModule
 
 
-class SGNet(BaseModule):
+class MSGNet(BaseModule):
     def __init__(self, num_classes: int, num_superclasses: int, img_size: int, loss: tf.keras.losses.Loss,
                  optimizer: tf.keras.optimizers.Optimizer, metric: tf.keras.metrics.Metric):
         super().__init__()

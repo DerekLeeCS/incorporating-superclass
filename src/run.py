@@ -6,7 +6,7 @@ from sklearn.model_selection import train_test_split
 from datasets.cifar100 import CIFAR100
 # from models.baseline import ResNet50
 # from models.baseline_auxiliary import ResNet50WithAux
-from models.sgnet import SGNet
+from models.msgnet import MSGNet
 
 # From:
 # https://www.tensorflow.org/guide/gpu#limiting_gpu_memory_growth
@@ -135,7 +135,7 @@ if __name__ == '__main__':
     )
 
     # Run model
-    model = SGNet(num_classes, num_superclasses, IMG_SIZE, LOSS, OPTIMIZER, METRIC)
+    model = MSGNet(num_classes, num_superclasses, IMG_SIZE, LOSS, OPTIMIZER, METRIC)
     if IS_TRAINING:
         model.train(train_dataset, valid_dataset, NUM_EPOCHS, steps_per_epoch)
         # model.plot_accuracy()
