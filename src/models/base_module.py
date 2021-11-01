@@ -1,21 +1,28 @@
 import datetime
 
 import tensorflow as tf
-from matplotlib import pyplot as plt
 
 
 class BaseModule(tf.Module):
     checkpoint_path = 'checkpoints/'
     saved_model_path = 'saved_model/'
 
-    output_coarse_name = 'output_coarse'
-    output_fine_name = 'output_fine'
+    _output_coarse_name = 'output_coarse'
+    _output_fine_name = 'output_fine'
 
     # Plot Constants
     _plot_metric = 'sparse_top_k_categorical_accuracy'
     _plot_label = 'Top 5 Accuracy'
     _fig_height = 5
     _fig_width = 15
+
+    @staticmethod
+    def get_output_coarse_name():
+        return BaseModule._output_coarse_name
+
+    @staticmethod
+    def get_output_fine_name():
+        return BaseModule._output_fine_name
 
     def train(self, train_dataset: tf.data.Dataset, valid_dataset: tf.data.Dataset, num_epochs: int,
               steps_per_epoch: int):
@@ -33,9 +40,9 @@ class BaseModule(tf.Module):
             period=20,  # Saves every 20 epochs
             save_best_only=True)
 
-        self.history = self.model.fit(train_dataset, epochs=num_epochs, validation_data=valid_dataset,
-                                      steps_per_epoch=steps_per_epoch,
-                                      callbacks=[lr_decay, tensorboard_callback, cp_callback])
+        self.model.fit(train_dataset, epochs=num_epochs, validation_data=valid_dataset,
+                       steps_per_epoch=steps_per_epoch,
+                       callbacks=[lr_decay, tensorboard_callback, cp_callback])
 
     def test(self, test_dataset: tf.data.Dataset):
         self.model.evaluate(test_dataset)
@@ -44,21 +51,10 @@ class BaseModule(tf.Module):
         self.model.load_weights(self.checkpoint_path)
 
     def save(self):
-        """Saves the model in the saved_model_path directory under a directory named after the class.
+        """Save the model in the saved_model_path directory under a directory named after the class.
         E.g. For the ResNet50 class, <saved_model_path>/ResNet50/
         """
         self.model.save(self.saved_model_path + type(self).__name__ + '/')
-
-    # Plots accuracy over time
-    def plot_accuracy(self):
-        plt.figure(figsize=(self._fig_width, self._fig_height))
-        plt.plot(self.history.history[self._plot_metric])
-        plt.plot(self.history.history['val_' + self._plot_metric])
-        plt.title('Model ' + self._plot_label)
-        plt.xlabel('Epochs')
-        plt.ylabel(self._plot_label, rotation='horizontal', ha='right')
-        plt.legend(['Train', 'Valid'], loc='upper left')
-        plt.show()
 
     @staticmethod
     def _lr_decay(epoch: int):

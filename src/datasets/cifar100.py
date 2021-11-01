@@ -15,7 +15,7 @@ class CIFAR100(Dataset):
     _num_superclasses = 20
 
     def unpickle(self, file: str) -> Dict:
-        """This function processes an uncompressed file from the CIFAR-100 dataset into a dictionary.
+        """Process an uncompressed file from the CIFAR-100 dataset into a dictionary.
         The dataset and the function is from:
         https://www.cs.toronto.edu/~kriz/cifar.html
         """
