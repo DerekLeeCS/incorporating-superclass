@@ -9,7 +9,7 @@ from models.base_module import BaseModule
 class ResidualBlock(tf.keras.Model, ABC):
     """Residual Block for a ResNet with Full Pre-activation"""
 
-    _regularizer = tf.keras.regularizers.l2(1e-3)
+    regularizer = tf.keras.regularizers.l2(1e-3)
 
     def __init__(self, filters: Tuple[int, int], s: int = None):
         super(ResidualBlock, self).__init__(name='')
@@ -19,23 +19,23 @@ class ResidualBlock(tf.keras.Model, ABC):
         if s is not None:
             self.downsample = True
             self.conv2a = tf.keras.layers.Conv2D(f1, kernel_size=(1, 1), strides=(s, s), padding='valid',
-                                                 kernel_regularizer=self._regularizer)
+                                                 kernel_regularizer=self.regularizer)
             self.conv2Shortcut = tf.keras.layers.Conv2D(f2, kernel_size=(1, 1), strides=(s, s), padding='valid',
-                                                        kernel_regularizer=self._regularizer)
+                                                        kernel_regularizer=self.regularizer)
             self.bn2Shortcut = tf.keras.layers.BatchNormalization()
         else:
             self.downsample = False
             self.conv2a = tf.keras.layers.Conv2D(f1, kernel_size=(1, 1), strides=(1, 1), padding='valid',
-                                                 kernel_regularizer=self._regularizer)
+                                                 kernel_regularizer=self.regularizer)
 
         self.bn2a = tf.keras.layers.BatchNormalization()
 
         self.conv2b = tf.keras.layers.Conv2D(f1, kernel_size=(k, k), strides=(1, 1), padding='same',
-                                             kernel_regularizer=self._regularizer)
+                                             kernel_regularizer=self.regularizer)
         self.bn2b = tf.keras.layers.BatchNormalization()
 
         self.conv2c = tf.keras.layers.Conv2D(f2, kernel_size=(1, 1), strides=(1, 1), padding='valid',
-                                             kernel_regularizer=self._regularizer)
+                                             kernel_regularizer=self.regularizer)
         self.bn2c = tf.keras.layers.BatchNormalization()
 
     def call(self, input_tensor: tf.Tensor, training: bool = False, **kwargs):

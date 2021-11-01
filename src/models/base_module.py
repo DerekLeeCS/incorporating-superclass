@@ -5,8 +5,11 @@ from matplotlib import pyplot as plt
 
 
 class BaseModule(tf.Module):
-    checkpoint_path = "checkpoints/"
-    saved_model_path = "saved_model/"
+    checkpoint_path = 'checkpoints/'
+    saved_model_path = 'saved_model/'
+
+    output_coarse_name = 'output_coarse'
+    output_fine_name = 'output_fine'
 
     # Plot Constants
     _plot_metric = 'sparse_top_k_categorical_accuracy'
@@ -19,7 +22,7 @@ class BaseModule(tf.Module):
         lr_decay = tf.keras.callbacks.LearningRateScheduler(self._lr_decay)
 
         # Used for TensorBoard
-        log_dir = "logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+        log_dir = 'logs/fit/' + datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
         tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
 
         # Create a callback that saves the model's weights
