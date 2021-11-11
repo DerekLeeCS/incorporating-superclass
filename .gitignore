@@ -1,7 +1,8 @@
 *.tar.gz
 *.idea
 *.pyc
-venv
-src/checkpoints
-src/saved_model
-src/datasets/cifar-100-python
+venv/
+src/logs/
+src/checkpoints/
+src/saved_model/
+src/datasets/cifar-100-python/
