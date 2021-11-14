@@ -80,7 +80,7 @@ class MultiOutputDataGenerator(tf.keras.preprocessing.image.ImageDataGenerator):
             yield flow_x, target_dict
 
 
-def get_formatted_labels(fine_label: List[int], coarse_label: List[int]) -> Dict:
+def get_formatted_labels(fine_label: List[int], coarse_label: List[int]) -> Dict[str, np.ndarray]:
     """Convert the provided labels into the required format for the model.
     Create a dictionary to map the output layer to the corresponding output labels.
     Add a singleton dimension to each label: N -> Nx1.
@@ -92,7 +92,7 @@ def get_formatted_labels(fine_label: List[int], coarse_label: List[int]) -> Dict
 
 
 def get_train_valid_split(img: np.ndarray, fine_label: List[int], coarse_label: List[int]) -> \
-        Tuple[np.ndarray, np.ndarray, Dict, Dict]:
+        Tuple[np.ndarray, np.ndarray, Dict[str, np.ndarray], Dict[str, np.ndarray]]:
     """Split the provided images and labels into a training and validation set.
     Convert the labels into the required format for the model.
 
