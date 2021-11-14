@@ -1,4 +1,3 @@
-from abc import ABC
 from typing import Tuple
 
 import tensorflow as tf
@@ -6,13 +5,13 @@ import tensorflow as tf
 from models.base_module import BaseModule
 
 
-class ResidualBlock(tf.keras.Model, ABC):
+class ResidualBlock(tf.keras.Model):
     """Residual Block for a ResNet with Full Pre-activation"""
 
     regularizer = tf.keras.regularizers.l2(1e-3)
 
     def __init__(self, filters: Tuple[int, int], s: int = None):
-        super(ResidualBlock, self).__init__(name='')
+        super(ResidualBlock, self).__init__()
         f1, f2 = filters
         k = 3  # Kernel size
 
