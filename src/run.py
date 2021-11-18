@@ -11,6 +11,7 @@ from models.baseline import ResNet50
 from models.baseline_auxiliary import ResNet50WithAux
 from models.msgnet import MSGNet
 from models.sgnet import SGNet
+from models.scinet import SCINet
 
 # From:
 # https://www.tensorflow.org/guide/gpu#limiting_gpu_memory_growth
@@ -156,7 +157,7 @@ if __name__ == '__main__':
     )
 
     # Run model
-    model = MSGNet(num_classes, num_superclasses, IMG_SIZE, LOSS, OPTIMIZER, METRIC)
+    model = SCINet(num_classes, num_superclasses, IMG_SIZE, LOSS, OPTIMIZER, METRIC)
     if IS_TRAINING:
         model.train(train_dataset, valid_dataset, NUM_EPOCHS, steps_per_epoch)
         model.load_weights()  # Ensure the best weights are used for saving
