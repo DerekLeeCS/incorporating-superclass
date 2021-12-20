@@ -46,7 +46,8 @@ class MSGNet(BaseModule):
 
         # Output
         x = tf.keras.layers.Flatten()(x)
-        x = tf.concat([x, aux], -1)
+        aux_blocked = tf.stop_gradient(aux)  # Block the gradient from flowing from the main classifier to the auxiliary classifier
+        x = tf.concat([x, aux_blocked], -1)
         out_main = tf.keras.layers.Dense(num_classes, activation='softmax', name=self._output_fine_name)(x)
 
         self.model = tf.keras.Model(inputs=inp, outputs=[out_main, out_aux])
