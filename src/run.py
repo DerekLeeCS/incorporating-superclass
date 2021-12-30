@@ -88,6 +88,7 @@ def get_formatted_labels(fine_label: List[int], coarse_label: List[int]) -> Dict
     """
     return {
         BaseModule.get_output_fine_name(): tf.reshape(tf.convert_to_tensor(fine_label), [-1, 1]),
+        BaseModule.get_output_coarse_name(): tf.reshape(tf.convert_to_tensor(coarse_label), [-1, 1]),
     }
 
 
@@ -156,7 +157,7 @@ if __name__ == '__main__':
     )
 
     # Run model
-    model = MSGNet(num_classes, num_superclasses, IMG_SIZE, LOSS, OPTIMIZER, METRIC)
+    model = SCINet(num_classes, num_superclasses, IMG_SIZE, LOSS, OPTIMIZER, METRIC)
     if IS_TRAINING:
         model.train(train_dataset, valid_dataset, NUM_EPOCHS, steps_per_epoch)
         model.load_weights()  # Ensure the best weights are used for saving
