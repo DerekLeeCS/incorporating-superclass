@@ -34,7 +34,6 @@ class MSGNet(BaseModule):
         aux = x
         aux = tf.keras.layers.AveragePooling2D((2, 2))(aux)
         aux = tf.keras.layers.Flatten()(aux)
-        out_aux = tf.keras.layers.Dense(num_superclasses, activation='softmax', name=self._output_coarse_name)(aux)
 
         # Stage 4
         x = ResidualBlock(filters=(512, 2048), s=2)(x)
@@ -49,8 +48,8 @@ class MSGNet(BaseModule):
         x = tf.concat([x, aux], -1)
         out_main = tf.keras.layers.Dense(num_classes, activation='softmax', name=self._output_fine_name)(x)
 
-        self.model = tf.keras.Model(inputs=inp, outputs=[out_main, out_aux])
+        self.model = tf.keras.Model(inputs=inp, outputs=[out_main])
         self.model.compile(optimizer=optimizer, loss=loss,
-                           loss_weights={self._output_coarse_name: 0.5, self._output_fine_name: 1},
+                           loss_weights={self._output_fine_name: 1},
                            metrics=metric)
         self.model.summary()
