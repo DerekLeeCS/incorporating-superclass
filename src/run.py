@@ -5,7 +5,7 @@ import tensorflow as tf
 
 from sklearn.model_selection import train_test_split
 
-from datasets.cifar100 import CIFAR100
+from datasets.cifar_100 import CIFAR100
 from models.base_module import BaseModule
 from models.baseline import ResNet50
 from models.baseline_auxiliary import ResNet50WithAux
