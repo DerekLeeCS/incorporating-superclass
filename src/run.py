@@ -5,8 +5,12 @@ import tensorflow as tf
 
 from sklearn.model_selection import train_test_split
 
-from datasets.cifar_100 import CIFAR100
 from models.base_module import BaseModule
+
+# Datasets
+from datasets.cifar_100_python.cifar_100 import CIFAR100
+
+# Models
 from models.baseline import ResNet50
 from models.baseline_auxiliary import ResNet50WithAux
 from models.msgnet import MSGNet
@@ -157,7 +161,7 @@ if __name__ == '__main__':
     )
 
     # Run model
-    model = SCINet(num_classes, num_superclasses, IMG_SIZE, LOSS, OPTIMIZER, METRIC)
+    model = MSGNet(num_classes, num_superclasses, IMG_SIZE, LOSS, OPTIMIZER, METRIC)
     if IS_TRAINING:
         model.train(train_dataset, valid_dataset, NUM_EPOCHS, steps_per_epoch)
         model.load_weights()  # Ensure the best weights are used for saving

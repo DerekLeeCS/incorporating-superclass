@@ -5,5 +5,5 @@ venv/
 src/logs/
 src/checkpoints/
 src/saved_model/
-src/datasets/cifar-100-python/
-src/datasets/oxford-flowers-102/
+src/datasets/cifar_100_python/data/
+src/datasets/oxford_flowers_102/data/

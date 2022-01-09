@@ -9,8 +9,8 @@ from datasets.dataset_interface import Dataset
 
 
 class CIFAR100(Dataset):
-    _file_train = Path(__file__, '../cifar-100-python/train')
-    _file_test = Path(__file__, '../cifar-100-python/test')
+    _file_train = Path(__file__, '../data/train')
+    _file_test = Path(__file__, '../data/test')
     _num_classes = 100
     _num_superclasses = 20
 
