@@ -135,7 +135,6 @@ if __name__ == '__main__':
     # Data Augmentation
     data_gen_train = MultiOutputDataGenerator(rotation_range=15, width_shift_range=0.1,
                                               height_shift_range=0.1, horizontal_flip=True)
-    data_gen_train.fit(train_img)
 
     # Convert to Dataset
     train_dataset = (
