@@ -160,12 +160,12 @@ if __name__ == '__main__':
     )
 
     # Run model
-    model = MSGNet(num_classes, num_superclasses, IMG_SIZE, LOSS, OPTIMIZER, METRIC)
+    module = MSGNet(num_classes, num_superclasses, IMG_SIZE, LOSS, OPTIMIZER, METRIC)
     if IS_TRAINING:
-        model.train(train_dataset, valid_dataset, NUM_EPOCHS, steps_per_epoch)
-        model.load_weights()  # Ensure the best weights are used for saving
-        model.save()
+        module.train(train_dataset, valid_dataset, NUM_EPOCHS, steps_per_epoch)
+        module.load_weights()  # Ensure the best weights are used for saving
+        module.save()
     else:
-        model.load_weights()
+        module.load_weights()
 
-    model.test(test_dataset)
+    module.test(test_dataset)
