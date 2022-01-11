@@ -51,11 +51,11 @@ class BaseModule(tf.Module):
         self.model.save(self.saved_model_path + type(self).__name__ + '/')
 
     @staticmethod
-    def _lr_decay(epoch: int):
+    def _lr_decay(epoch: int) -> float:
         lr = 1e-3
-        if epoch > 120:
+        if epoch > 80:
             lr *= 1e-2
-        elif epoch > 80:
+        elif epoch > 60:
             lr *= 1e-1
 
         return lr
