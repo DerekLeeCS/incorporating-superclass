@@ -14,7 +14,8 @@ class CIFAR100(Dataset):
     _num_classes = 100
     _num_superclasses = 20
 
-    def unpickle(self, file: str) -> Dict:
+    @staticmethod
+    def _unpickle(file: str) -> Dict:
         """Process an uncompressed file from the CIFAR-100 dataset into a dictionary.
         The dataset and the function is from:
         https://www.cs.toronto.edu/~kriz/cifar.html
@@ -35,7 +36,7 @@ class CIFAR100(Dataset):
             b'coarse_labels': [],
             b'data': []
         }
-        dict_data.update(self.unpickle(str(file_name)))
+        dict_data.update(self._unpickle(str(file_name)))
 
         # Reshapes each image into 32x32 and 3 channels (RGB)
         dict_data[b'data'] = np.reshape(dict_data[b'data'], [-1, 3, 32, 32]).transpose([0, 2, 3, 1])
