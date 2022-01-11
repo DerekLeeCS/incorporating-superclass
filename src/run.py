@@ -5,12 +5,11 @@ import tensorflow as tf
 
 from sklearn.model_selection import train_test_split
 
-from models.base_module import BaseModule
-
 # Datasets
 from datasets.cifar_100_python.cifar_100 import CIFAR100
 
 # Models
+from models.base_module import BaseModule
 from models.baseline import ResNet50
 from models.baseline_auxiliary import ResNet50WithAux
 from models.msgnet import MSGNet
@@ -42,47 +41,6 @@ OPTIMIZER = tf.keras.optimizers.Adam()
 LOSS = tf.keras.losses.SparseCategoricalCrossentropy()
 METRIC = tf.keras.metrics.SparseTopKCategoricalAccuracy(k=5)
 IS_TRAINING = True
-
-
-class MultiOutputDataGenerator(tf.keras.preprocessing.image.ImageDataGenerator):
-    """A custom ImageDataGenerator that takes a single input and produces multiple outputs.
-    From:
-    https://github.com/keras-team/keras/issues/12639
-    """
-
-    def flow(self,
-             x,
-             y=None,
-             batch_size=32,
-             shuffle=True,
-             sample_weight=None,
-             seed=None,
-             save_to_dir=None,
-             save_prefix='',
-             save_format='png',
-             subset=None):
-
-        targets = None
-        target_lengths = {}
-        ordered_outputs = []
-        for output, target in y.items():
-            if targets is None:
-                targets = target
-            else:
-                targets = np.concatenate((targets, target), axis=1)
-            target_lengths[output] = target.shape[1]
-            ordered_outputs.append(output)
-
-        for flow_x, flow_y in super().flow(x, targets, batch_size=batch_size,
-                                           shuffle=shuffle):
-            target_dict = {}
-            i = 0
-            for output in ordered_outputs:
-                target_length = target_lengths[output]
-                target_dict[output] = flow_y[:, i: i + target_length]
-                i += target_length
-
-            yield flow_x, target_dict
 
 
 def get_formatted_labels(fine_label: List[int], coarse_label: List[int]) -> Dict[str, np.ndarray]:
@@ -132,31 +90,32 @@ if __name__ == '__main__':
     # Calculate number of steps per epoch
     steps_per_epoch = int(tf.shape(train_img)[0] / BATCH_SIZE)
 
-    # Data Augmentation
-    data_gen_train = MultiOutputDataGenerator(rotation_range=15, width_shift_range=0.1,
-                                              height_shift_range=0.1, horizontal_flip=True)
+    # Define data augmentation
+    augment = tf.keras.Sequential([
+        tf.keras.layers.RandomFlip('horizontal'),
+        tf.keras.layers.RandomRotation(15 / 360),
+        tf.keras.layers.RandomTranslation(height_factor=0.1, width_factor=0.1, fill_mode='nearest',
+                                          interpolation='nearest'),
+    ])
 
-    # Convert to Dataset
     train_dataset = (
-        tf.data.Dataset.from_generator(lambda: data_gen_train.flow(train_img, train_label, batch_size=BATCH_SIZE),
-                                       output_signature=(
-                                           tf.TensorSpec(shape=(BATCH_SIZE, IMG_SIZE, IMG_SIZE, 3), dtype=tf.float32),
-                                           {output_name: tf.TensorSpec(shape=(BATCH_SIZE, 1), dtype=tf.int32)
-                                            for output_name in train_label}
-                                       ))
-        .prefetch(AUTOTUNE)
+        tf.data.Dataset.from_tensor_slices((train_img, train_label))
+            .shuffle(tf.cast(tf.shape(train_img)[0], tf.int64))
+            .batch(BATCH_SIZE)
+            .map(lambda x, y: (augment(x, training=True), y), num_parallel_calls=AUTOTUNE)
+            .prefetch(AUTOTUNE)
     )
     valid_dataset = (
         tf.data.Dataset.from_tensor_slices((valid_img, valid_label))
-        .batch(BATCH_SIZE)
-        .cache()
-        .prefetch(AUTOTUNE)
+            .batch(BATCH_SIZE)
+            .cache()
+            .prefetch(AUTOTUNE)
     )
     test_dataset = (
         tf.data.Dataset.from_tensor_slices((test_img, test_label))
-        .batch(BATCH_SIZE)
-        .cache()
-        .prefetch(AUTOTUNE)
+            .batch(BATCH_SIZE)
+            .cache()
+            .prefetch(AUTOTUNE)
     )
 
     # Run model
