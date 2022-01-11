@@ -30,21 +30,21 @@ class CIFAR100(Dataset):
         else:
             file_name = self._file_test
 
-        # Defines which dictionary keys to keep from the unpickled file
-        dict_data = {
+        # Define which dictionary keys to keep from the unpickled file
+        dict_examples = {
             b'fine_labels': [],
             b'coarse_labels': [],
             b'data': []
         }
-        dict_data.update(self._unpickle(str(file_name)))
+        dict_examples.update(CIFAR100._unpickle(str(file_name)))
 
-        # Reshapes each image into 32x32 and 3 channels (RGB)
-        dict_data[b'data'] = np.reshape(dict_data[b'data'], [-1, 3, 32, 32]).transpose([0, 2, 3, 1])
+        # Reshape each image into 32x32 and 3 channels (RGB)
+        dict_examples[b'data'] = np.reshape(dict_examples[b'data'], [-1, 3, 32, 32]).transpose([0, 2, 3, 1])
 
         # Normalize images
-        dict_data[b'data'] = dict_data[b'data'] / 255
+        dict_examples[b'data'] = dict_examples[b'data'] / 255
 
-        return dict_data
+        return dict_examples
 
     def get_num_classes(self) -> Tuple[int, int]:
         return self._num_classes, self._num_superclasses
