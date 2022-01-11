@@ -10,12 +10,6 @@ class BaseModule(tf.Module):
     _output_coarse_name = 'output_coarse'
     _output_fine_name = 'output_fine'
 
-    # Plot Constants
-    _plot_metric = 'sparse_top_k_categorical_accuracy'
-    _plot_label = 'Top 5 Accuracy'
-    _fig_height = 5
-    _fig_width = 15
-
     @staticmethod
     def get_output_coarse_name():
         return BaseModule._output_coarse_name
