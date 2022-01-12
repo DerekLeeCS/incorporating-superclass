@@ -62,10 +62,7 @@ if __name__ == '__main__':
     dataset = CIFAR100()
     train_dataset, valid_dataset, test_dataset = dataset.get_data()
     num_classes, num_superclasses = dataset.get_num_classes()
-
-    # Calculate number of steps per epoch
     num_train_examples = TFRecordHandler.count_size(train_dataset)
-    steps_per_epoch = int(num_train_examples / BATCH_SIZE)
 
     # Define data augmentation
     augment = tf.keras.Sequential([
@@ -78,9 +75,9 @@ if __name__ == '__main__':
     train_dataset = (
         train_dataset
             .map(preprocess, num_parallel_calls=AUTOTUNE)
+            .cache()
             .shuffle(tf.cast(num_train_examples, tf.int64))
             .batch(BATCH_SIZE)
-            .repeat()
             .map(lambda x, y: (augment(x, training=True), y), num_parallel_calls=AUTOTUNE)
             .prefetch(AUTOTUNE)
     )
@@ -102,7 +99,7 @@ if __name__ == '__main__':
     # Run model
     module = MSGNet(num_classes, num_superclasses, IMG_SIZE, LOSS, OPTIMIZER, METRIC)
     if IS_TRAINING:
-        module.train(train_dataset, valid_dataset, NUM_EPOCHS, steps_per_epoch)
+        module.train(train_dataset, valid_dataset, NUM_EPOCHS)
         module.load_weights()  # Ensure the best weights are used for saving
         module.save()
     else:

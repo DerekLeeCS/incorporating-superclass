@@ -18,8 +18,7 @@ class BaseModule(tf.Module):
     def get_output_fine_name():
         return BaseModule._output_fine_name
 
-    def train(self, train_dataset: tf.data.Dataset, valid_dataset: tf.data.Dataset, num_epochs: int,
-              steps_per_epoch: int):
+    def train(self, train_dataset: tf.data.Dataset, valid_dataset: tf.data.Dataset, num_epochs: int):
         lr_decay = tf.keras.callbacks.LearningRateScheduler(self._lr_decay)
 
         # Used for TensorBoard
@@ -35,7 +34,6 @@ class BaseModule(tf.Module):
             save_best_only=True)
 
         self.model.fit(train_dataset, epochs=num_epochs, validation_data=valid_dataset,
-                       steps_per_epoch=steps_per_epoch,
                        callbacks=[lr_decay, tensorboard_callback, cp_callback])
 
     def test(self, test_dataset: tf.data.Dataset):

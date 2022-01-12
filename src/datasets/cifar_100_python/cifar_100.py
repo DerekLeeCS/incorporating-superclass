@@ -67,7 +67,6 @@ class CIFAR100(Dataset):
         return (
             TFRecordHandler.read_examples(str(file_name))
                 .map(self.preprocess_image, num_parallel_calls=AUTOTUNE)
-                .cache()
         )
 
     def get_data(self) -> Tuple[tf.data.TFRecordDataset, tf.data.TFRecordDataset, tf.data.TFRecordDataset]:
