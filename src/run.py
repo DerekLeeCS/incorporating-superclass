@@ -18,6 +18,8 @@ from models.scinet import SCINet
 
 # From:
 # https://www.tensorflow.org/guide/gpu#limiting_gpu_memory_growth
+from tfrecord_handler import TFRecordHandler
+
 gpus = tf.config.experimental.list_physical_devices('GPU')
 if gpus:
     # Restrict TensorFlow to only allocate 4GB of memory on the first GPU
@@ -43,52 +45,27 @@ METRIC = tf.keras.metrics.SparseTopKCategoricalAccuracy(k=5)
 IS_TRAINING = True
 
 
-def get_formatted_labels(fine_label: List[int], coarse_label: List[int]) -> Dict[str, np.ndarray]:
-    """Convert the provided labels into the required format for the model.
-    Create a dictionary to map the output layer to the corresponding output labels.
-    Add a singleton dimension to each label: N -> Nx1.
-    """
-    return {
-        BaseModule.get_output_fine_name(): tf.reshape(tf.convert_to_tensor(fine_label), [-1, 1]),
-        BaseModule.get_output_coarse_name(): tf.reshape(tf.convert_to_tensor(coarse_label), [-1, 1]),
+def preprocess(example: Dict) -> Tuple[tf.Tensor, Dict]:
+    # Prepare the labels
+    fine_label = example.pop('fine_label')
+    coarse_label = example.pop('coarse_label')
+    label = {
+        BaseModule.get_output_fine_name(): tf.convert_to_tensor(fine_label),
+        BaseModule.get_output_coarse_name(): tf.convert_to_tensor(coarse_label),
     }
 
-
-def get_train_valid_split(img: np.ndarray, fine_label: List[int], coarse_label: List[int]) -> \
-        Tuple[np.ndarray, np.ndarray, Dict[str, np.ndarray], Dict[str, np.ndarray]]:
-    """Split the provided images and labels into a training and validation set.
-    Convert the labels into the required format for the model.
-
-    Returns:
-        Training images, validation images, training labels, validation images, in that order.
-    """
-    # Associate the fine and coarse labels together so we can randomize them
-    label = list(tuple(zip(fine_label, coarse_label)))
-
-    # Split into training and validation sets
-    train_img, valid_img, train_label, valid_label = train_test_split(img, label, test_size=VALID_SIZE)
-    train_label = get_formatted_labels(fine_label=[x[0] for x in train_label], coarse_label=[x[1] for x in train_label])
-    valid_label = get_formatted_labels(fine_label=[x[0] for x in valid_label], coarse_label=[x[1] for x in valid_label])
-
-    return train_img, valid_img, train_label, valid_label
+    return example['image'], label
 
 
 if __name__ == '__main__':
     # Get data
     dataset = CIFAR100()
-    data_train = dataset.get_data(True)
-    data_test = dataset.get_data(False)
+    train_dataset, valid_dataset, test_dataset = dataset.get_data()
     num_classes, num_superclasses = dataset.get_num_classes()
 
-    # Extract data
-    train_img, valid_img, train_label, valid_label = get_train_valid_split(img=data_train[b'data'],
-                                                                           fine_label=data_train[b'fine_labels'],
-                                                                           coarse_label=data_train[b'coarse_labels'])
-    test_img = data_test[b'data']
-    test_label = get_formatted_labels(fine_label=data_test[b'fine_labels'], coarse_label=data_test[b'coarse_labels'])
-
     # Calculate number of steps per epoch
-    steps_per_epoch = int(tf.shape(train_img)[0] / BATCH_SIZE)
+    num_train_examples = TFRecordHandler.count_size(train_dataset)
+    steps_per_epoch = int(num_train_examples / BATCH_SIZE)
 
     # Define data augmentation
     augment = tf.keras.Sequential([
@@ -99,21 +76,25 @@ if __name__ == '__main__':
     ])
 
     train_dataset = (
-        tf.data.Dataset.from_tensor_slices((train_img, train_label))
-            .shuffle(tf.cast(tf.shape(train_img)[0], tf.int64))
+        train_dataset
+            .map(preprocess, num_parallel_calls=AUTOTUNE)
+            .shuffle(tf.cast(num_train_examples, tf.int64))
             .batch(BATCH_SIZE)
+            .repeat()
             .map(lambda x, y: (augment(x, training=True), y), num_parallel_calls=AUTOTUNE)
             .prefetch(AUTOTUNE)
     )
     valid_dataset = (
-        tf.data.Dataset.from_tensor_slices((valid_img, valid_label))
+        valid_dataset
             .batch(BATCH_SIZE)
+            .map(preprocess, num_parallel_calls=AUTOTUNE)
             .cache()
             .prefetch(AUTOTUNE)
     )
     test_dataset = (
-        tf.data.Dataset.from_tensor_slices((test_img, test_label))
+        test_dataset
             .batch(BATCH_SIZE)
+            .map(preprocess, num_parallel_calls=AUTOTUNE)
             .cache()
             .prefetch(AUTOTUNE)
     )
