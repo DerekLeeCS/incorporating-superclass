@@ -39,14 +39,9 @@ class TFRecordHandler:
         From:
         https://www.tensorflow.org/tutorials/load_data/tfrecord
         """
-        image_shape = tf.shape(image)
-
         # Create a dictionary mapping the feature name to the tf.train.Example-compatible
         # data type.
         feature = {
-            # 'height': TFRecordHandler._int64_feature(image_shape[0]),
-            # 'width': TFRecordHandler._int64_feature(image_shape[1]),
-            # 'depth': TFRecordHandler._int64_feature(image_shape[2]),
             'image_raw': TFRecordHandler._bytes_feature(tf.io.serialize_tensor(image)),  # Serialize array to string
             'fine_label': TFRecordHandler._int64_feature(fine_label),
             'coarse_label': TFRecordHandler._int64_feature(coarse_label),
@@ -70,9 +65,6 @@ class TFRecordHandler:
         https://stackoverflow.com/a/60283571 and https://www.tensorflow.org/tutorials/load_data/tfrecord
         """
         feature_description = {
-            # 'height': tf.io.FixedLenFeature([], tf.int64),
-            # 'width': tf.io.FixedLenFeature([], tf.int64),
-            # 'depth': tf.io.FixedLenFeature([], tf.int64),
             'image_raw': tf.io.FixedLenFeature([], tf.string),
             'fine_label': tf.io.FixedLenFeature([], tf.int64),
             'coarse_label': tf.io.FixedLenFeature([], tf.int64),
