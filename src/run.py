@@ -97,7 +97,7 @@ if __name__ == '__main__':
     )
 
     # Run model
-    module = MSGNet(num_classes, num_superclasses, IMG_SIZE, LOSS, OPTIMIZER, METRIC)
+    module = SCINet(num_classes, num_superclasses, IMG_SIZE, LOSS, OPTIMIZER, METRIC)
     if IS_TRAINING:
         module.train(train_dataset, valid_dataset, NUM_EPOCHS)
         module.load_weights()  # Ensure the best weights are used for saving
