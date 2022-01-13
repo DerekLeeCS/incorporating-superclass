@@ -71,40 +71,39 @@ class ResNet50(BaseModule):
     def __init__(self, num_classes: int, img_size: int, loss: tf.keras.losses.Loss,
                  optimizer: tf.keras.optimizers.Optimizer, metric: tf.keras.metrics.Metric):
         super().__init__()
-        self.model = tf.keras.models.Sequential()
-        self.model.add(tf.keras.layers.InputLayer(input_shape=(img_size, img_size, 3)))
-
-        self.model.add(tf.keras.layers.Conv2D(64, (7, 7), strides=(2, 2)))
-        self.model.add(tf.keras.layers.BatchNormalization())
-        self.model.add(tf.keras.layers.ReLU())
-        self.model.add(tf.keras.layers.MaxPooling2D((3, 3), strides=(2, 2)))
+        inp = tf.keras.layers.Input(shape=(img_size, img_size, 3))
+        x = tf.keras.layers.Conv2D(64, (7, 7), strides=(2, 2))(inp)
+        x = tf.keras.layers.BatchNormalization()(x)
+        x = tf.keras.layers.ReLU()(x)
+        x = tf.keras.layers.MaxPooling2D((3, 3), strides=(2, 2))(x)
 
         # Stage 1
-        self.model.add(ResidualBlock(filters=(64, 256), s=1))
+        x = ResidualBlock(filters=(64, 256), s=1)(x)
         for _ in range(2):
-            self.model.add(ResidualBlock(filters=(64, 256)))
+            x = ResidualBlock(filters=(64, 256))(x)
 
         # Stage 2
-        self.model.add(ResidualBlock(filters=(128, 512), s=2))
+        x = ResidualBlock(filters=(128, 512), s=2)(x)
         for _ in range(3):
-            self.model.add(ResidualBlock(filters=(128, 512)))
+            x = ResidualBlock(filters=(128, 512))(x)
 
         # Stage 3
-        self.model.add(ResidualBlock(filters=(256, 1024), s=2))
+        x = ResidualBlock(filters=(256, 1024), s=2)(x)
         for _ in range(5):
-            self.model.add(ResidualBlock(filters=(256, 1024)))
+            x = ResidualBlock(filters=(256, 1024))(x)
 
         # Stage 4
-        self.model.add(ResidualBlock(filters=(512, 2048), s=2))
+        x = ResidualBlock(filters=(512, 2048), s=2)(x)
         for _ in range(2):
-            self.model.add(ResidualBlock(filters=(512, 2048)))
+            x = ResidualBlock(filters=(512, 2048))(x)
 
         # Pooling
-        self.model.add(tf.keras.layers.AveragePooling2D((2, 2), padding='same'))
+        x = tf.keras.layers.AveragePooling2D((2, 2), padding='same')(x)
 
         # Output
-        self.model.add(tf.keras.layers.Flatten())
-        self.model.add(tf.keras.layers.Dense(num_classes, activation='softmax'))
+        x = tf.keras.layers.Flatten()(x)
+        out = tf.keras.layers.Dense(num_classes, activation='softmax', name=self._output_fine_name)(x)
 
+        self.model = tf.keras.Model(inputs=inp, outputs=out)
         self.model.compile(optimizer=optimizer, loss=loss, metrics=metric)
         self.model.summary()
