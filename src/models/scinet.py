@@ -146,6 +146,7 @@ class SCINet(BaseModule):
 
         # Stage 4
         x = ResidualBlockWithSCIN(num_superclasses=num_superclasses, filters=(512, 2048), s=2)((x, super_ind))
+        # x = ResidualBlock(filters=(512, 2048), s=2)(x)
         for _ in range(2):
             x = ResidualBlock(filters=(512, 2048))(x)
 
