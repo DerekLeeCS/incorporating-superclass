@@ -72,6 +72,7 @@ class ResNet50(BaseModule):
                  optimizer: tf.keras.optimizers.Optimizer, metric: tf.keras.metrics.Metric):
         super().__init__()
         inp = tf.keras.layers.Input(shape=(img_size, img_size, 3))
+
         x = tf.keras.layers.Conv2D(64, (7, 7), strides=(2, 2))(inp)
         x = tf.keras.layers.BatchNormalization()(x)
         x = tf.keras.layers.ReLU()(x)
