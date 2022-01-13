@@ -42,24 +42,24 @@ class ResidualBlock(tf.keras.Model):
         x_short = input_tensor
 
         if self.downsample:
-            x_short = self.conv2Shortcut(x_short)
             x_short = self.bn2Shortcut(x_short, training=training)
             x_short = tf.keras.layers.ReLU()(x_short)
+            x_short = self.conv2Shortcut(x_short)
 
         # Block 1
-        x = self.conv2a(x)
         x = self.bn2a(x, training=training)
         x = tf.keras.layers.ReLU()(x)
+        x = self.conv2a(x)
 
         # Block 2
-        x = self.conv2b(x)
         x = self.bn2b(x, training=training)
         x = tf.keras.layers.ReLU()(x)
+        x = self.conv2b(x)
 
         # Block 3
-        x = self.conv2c(x)
         x = self.bn2c(x, training=training)
         x = tf.keras.layers.ReLU()(x)
+        x = self.conv2c(x)
 
         # Output
         x += x_short
