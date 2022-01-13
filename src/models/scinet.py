@@ -95,8 +95,6 @@ class ResidualBlockWithSCIN(tf.keras.Model):
         x = self.conv2a(x)
 
         # Block 2
-        # x = self.bn2b(x, training=training)
-        # x = tf.keras.layers.ReLU()(x)
         x = self.scin(x, super_ind)
 
         # Block 3
