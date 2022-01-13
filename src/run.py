@@ -46,13 +46,14 @@ IS_TRAINING = True
 
 def preprocess(example: Dict) -> Tuple[tf.Tensor, Dict]:
     # Prepare the labels
-    fine_label = example.pop('fine_label')
-    coarse_label = example.pop('coarse_label')
+    fine_label = example['fine_label']
+    coarse_label = example['coarse_label']
     label = {
         BaseModule.get_output_fine_name(): tf.convert_to_tensor(fine_label),
-        # BaseModule.get_output_coarse_name(): tf.convert_to_tensor(coarse_label),
+        BaseModule.get_output_coarse_name(): tf.convert_to_tensor(coarse_label),
     }
 
+    # We only want the image and the prepared label
     return example['image'], label
 
 
@@ -96,7 +97,7 @@ if __name__ == '__main__':
     )
 
     # Run model
-    module = ResNet50(num_classes, IMG_SIZE, LOSS, OPTIMIZER, METRIC)
+    module = ResNet50WithAux(num_classes, num_superclasses, IMG_SIZE, LOSS, OPTIMIZER, METRIC)
     if IS_TRAINING:
         module.train(train_dataset, valid_dataset, NUM_EPOCHS)
         module.load_weights()  # Ensure the best weights are used for saving
