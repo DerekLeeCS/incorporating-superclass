@@ -142,10 +142,10 @@ class SCINet(BaseModule):
 
         # Superclass Conditional Instance Normalization
         super_ind = tf.argmax(out_aux, axis=-1)
-        x = SCIN(num_superclasses, 1024)(x, super_ind)
+        # x = SCIN(num_superclasses, 1024)(x, super_ind)
 
         # Stage 4
-        x = ResidualBlock(filters=(512, 2048), s=2)(x)
+        x = ResidualBlockWithSCIN(num_superclasses=num_superclasses, filters=(512, 2048), s=2)((x, super_ind))
         for _ in range(2):
             x = ResidualBlock(filters=(512, 2048))(x)
 
