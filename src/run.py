@@ -44,7 +44,7 @@ METRIC = tf.keras.metrics.SparseTopKCategoricalAccuracy(k=5)
 IS_TRAINING = True
 
 
-def preprocess(example: Dict) -> Tuple[tf.Tensor, Dict]:
+def prepare_example(example: Dict) -> Tuple[tf.Tensor, Dict]:
     # Prepare the labels
     fine_label = example['fine_label']
     coarse_label = example['coarse_label']
@@ -74,7 +74,7 @@ if __name__ == '__main__':
 
     train_dataset = (
         train_dataset
-            .map(preprocess, num_parallel_calls=AUTOTUNE)
+            .map(prepare_example, num_parallel_calls=AUTOTUNE)
             .cache()
             .shuffle(tf.cast(num_train_examples, tf.int64))
             .batch(BATCH_SIZE)
@@ -84,14 +84,14 @@ if __name__ == '__main__':
     valid_dataset = (
         valid_dataset
             .batch(BATCH_SIZE)
-            .map(preprocess, num_parallel_calls=AUTOTUNE)
+            .map(prepare_example, num_parallel_calls=AUTOTUNE)
             .cache()
             .prefetch(AUTOTUNE)
     )
     test_dataset = (
         test_dataset
             .batch(BATCH_SIZE)
-            .map(preprocess, num_parallel_calls=AUTOTUNE)
+            .map(prepare_example, num_parallel_calls=AUTOTUNE)
             .cache()
             .prefetch(AUTOTUNE)
     )
