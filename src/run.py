@@ -2,8 +2,6 @@ from typing import Dict, Tuple
 
 import tensorflow as tf
 
-from sklearn.model_selection import train_test_split
-
 # Datasets
 from datasets.cifar_100_python.cifar_100 import CIFAR100
 
