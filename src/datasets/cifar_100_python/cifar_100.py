@@ -40,14 +40,14 @@ class CIFAR100(Dataset):
         return dict
 
     @staticmethod
-    def read_pickled_examples(file_name: str) -> Dict:
+    def read_pickled_examples(file_name: Path) -> Dict:
         # Define which dictionary keys to keep from the pickled examples
         examples = {
             b'fine_labels': [],
             b'coarse_labels': [],
             b'data': []
         }
-        examples.update(CIFAR100._unpickle(file_name))
+        examples.update(CIFAR100._unpickle(str(file_name)))
 
         # Reshape each image into 32x32 and 3 channels (RGB)
         examples[b'data'] = np.reshape(examples[b'data'], [-1, 3, 32, 32]).transpose([0, 2, 3, 1])
@@ -81,8 +81,8 @@ def write_dataset_to_tfrecord():
     """Split the dataset into training, validation, and test sets. Write each to a TFRecord."""
     dataset = CIFAR100()
 
-    train_data = CIFAR100.read_pickled_examples(str(dataset.FILE_TRAIN))
-    test_data = CIFAR100.read_pickled_examples(str(dataset.FILE_TEST))
+    train_data = CIFAR100.read_pickled_examples(dataset.FILE_TRAIN)
+    test_data = CIFAR100.read_pickled_examples(dataset.FILE_TEST)
 
     # Associate the fine and coarse labels together so we can randomize them
     label = list(tuple(zip(train_data[b'fine_labels'], train_data[b'coarse_labels'])))
@@ -100,9 +100,9 @@ def write_dataset_to_tfrecord():
     test_fine_label = test_data[b'fine_labels']
     test_coarse_label = test_data[b'coarse_labels']
 
-    TFRecordHandler.write_examples(str(dataset.FILE_TFRECORD_TRAIN), train_img, train_fine_label, train_coarse_label)
-    TFRecordHandler.write_examples(str(dataset.FILE_TFRECORD_VALID), valid_img, valid_fine_label, valid_coarse_label)
-    TFRecordHandler.write_examples(str(dataset.FILE_TFRECORD_TEST), test_img, test_fine_label, test_coarse_label)
+    TFRecordHandler.write_examples(dataset.FILE_TFRECORD_TRAIN, train_img, train_fine_label, train_coarse_label)
+    TFRecordHandler.write_examples(dataset.FILE_TFRECORD_VALID, valid_img, valid_fine_label, valid_coarse_label)
+    TFRecordHandler.write_examples(dataset.FILE_TFRECORD_TEST, test_img, test_fine_label, test_coarse_label)
 
 
 if __name__ == '__main__':

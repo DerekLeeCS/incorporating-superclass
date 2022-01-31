@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import List
 
 import numpy as np
@@ -52,8 +53,8 @@ class TFRecordHandler:
         return example_proto.SerializeToString()
 
     @staticmethod
-    def write_examples(file_name: str, image: List[np.array], fine_label: List[int], coarse_label: List[int]):
-        with tf.io.TFRecordWriter(file_name) as writer:
+    def write_examples(file_name: Path, image: List[np.array], fine_label: List[int], coarse_label: List[int]):
+        with tf.io.TFRecordWriter(str(file_name)) as writer:
             for img, fine, coarse in zip(image, fine_label, coarse_label):
                 serialized = TFRecordHandler.serialize_example(img, fine, coarse)
                 writer.write(serialized)
