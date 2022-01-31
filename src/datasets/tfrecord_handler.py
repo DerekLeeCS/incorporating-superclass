@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List
+from typing import List, Union
 
 import numpy as np
 import tensorflow as tf
@@ -82,12 +82,12 @@ class TFRecordHandler:
         return example
 
     @staticmethod
-    def read_examples(file_name: str) -> tf.data.TFRecordDataset:
+    def read_examples(file_name: Union[str, List[str]]) -> tf.data.TFRecordDataset:
         """
         Based on:
         https://www.tensorflow.org/tutorials/load_data/tfrecord
         """
-        raw_dataset = tf.data.TFRecordDataset(file_name)
+        raw_dataset = tf.data.TFRecordDataset(file_name, num_parallel_reads=AUTOTUNE)
         parsed_dataset = raw_dataset.map(TFRecordHandler._parse_tfr_element, num_parallel_calls=AUTOTUNE)
         return parsed_dataset
 
