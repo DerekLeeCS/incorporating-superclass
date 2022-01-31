@@ -59,15 +59,15 @@ class CIFAR100(Dataset):
     def _unpack_examples(examples: Dict) -> Tuple[List[np.array], List[int], List[int]]:
         return examples[b'data'], examples[b'fine_labels'], examples[b'coarse_labels']
 
-    def preprocess_image(self, example: Dict) -> Dict:
-        example['image'] = self.preprocess(example['image'])
-        return example
-
     def preprocess_tfrecord(self, file_name: Path) -> tf.data.TFRecordDataset:
         """Apply preprocessing to each element in the dataset and cache the results for future use."""
+        def preprocess_image(example: Dict) -> Dict:
+            example['image'] = self.preprocess(example['image'])
+            return example
+
         return (
             TFRecordHandler.read_examples(str(file_name))
-                .map(self.preprocess_image, num_parallel_calls=AUTOTUNE)
+                .map(preprocess_image, num_parallel_calls=AUTOTUNE)
         )
 
     def get_data(self) -> Tuple[tf.data.TFRecordDataset, tf.data.TFRecordDataset, tf.data.TFRecordDataset]:
