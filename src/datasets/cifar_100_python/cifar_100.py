@@ -21,8 +21,9 @@ class CIFAR100(Dataset):
     FILE_TFRECORD_VALID = Path(__file__, '../data/valid.tfrecord')
     FILE_TFRECORD_TEST = Path(__file__, '../data/test.tfrecord')
 
-    _num_classes = 100
-    _num_superclasses = 20
+    _NUM_CLASSES = 100
+    _NUM_SUPERCLASSES = 20
+    _IMG_SIZE = 32
 
     def __init__(self):
         self.preprocess = tf.keras.Sequential([
@@ -73,8 +74,11 @@ class CIFAR100(Dataset):
         return self.preprocess_tfrecord(self.FILE_TFRECORD_TRAIN), self.preprocess_tfrecord(self.FILE_TFRECORD_VALID), \
                self.preprocess_tfrecord(self.FILE_TFRECORD_TEST)
 
+    def get_image_size(self) -> int:
+        return self._IMG_SIZE
+
     def get_num_classes(self) -> Tuple[int, int]:
-        return self._num_classes, self._num_superclasses
+        return self._NUM_CLASSES, self._NUM_SUPERCLASSES
 
 
 def write_dataset_to_tfrecord():
@@ -96,13 +100,12 @@ def write_dataset_to_tfrecord():
     # Unpack the examples
     train_fine_label, train_coarse_label = unpack_labels(train_label)
     valid_fine_label, valid_coarse_label = unpack_labels(valid_label)
-    test_img = test_data[b'data']
-    test_fine_label = test_data[b'fine_labels']
-    test_coarse_label = test_data[b'coarse_labels']
 
+    # Write each split to a TFRecord
     TFRecordHandler.write_examples(dataset.FILE_TFRECORD_TRAIN, train_img, train_fine_label, train_coarse_label)
     TFRecordHandler.write_examples(dataset.FILE_TFRECORD_VALID, valid_img, valid_fine_label, valid_coarse_label)
-    TFRecordHandler.write_examples(dataset.FILE_TFRECORD_TEST, test_img, test_fine_label, test_coarse_label)
+    TFRecordHandler.write_examples(dataset.FILE_TFRECORD_TEST, test_data[b'data'], test_data[b'fine_labels'],
+                                   test_data[b'coarse_labels'])
 
 
 if __name__ == '__main__':

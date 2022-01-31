@@ -33,7 +33,6 @@ if gpus:
         print(e)
 
 # Constants
-IMG_SIZE = 32
 BATCH_SIZE = 64
 VALID_SIZE = 0.2
 NUM_EPOCHS = 100
@@ -61,6 +60,7 @@ if __name__ == '__main__':
     # Get data
     dataset = CIFAR100()
     train_dataset, valid_dataset, test_dataset = dataset.get_data()
+    img_size = dataset.get_image_size()
     num_classes, num_superclasses = dataset.get_num_classes()
     num_train_examples = TFRecordHandler.count_size(train_dataset)
 
@@ -97,7 +97,7 @@ if __name__ == '__main__':
     )
 
     # Run model
-    module = ResNet50WithAux(num_classes, num_superclasses, IMG_SIZE, LOSS, OPTIMIZER, METRIC)
+    module = MSGNet(num_classes, num_superclasses, img_size, LOSS, OPTIMIZER, METRIC)
     if IS_TRAINING:
         module.train(train_dataset, valid_dataset, NUM_EPOCHS)
         module.load_weights()  # Ensure the best weights are used for saving

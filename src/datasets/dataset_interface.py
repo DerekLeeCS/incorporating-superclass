@@ -13,6 +13,10 @@ class Dataset(abc.ABC):
         pass
 
     @abc.abstractmethod
+    def get_image_size(self) -> int:
+        pass
+
+    @abc.abstractmethod
     def get_num_classes(self) -> Tuple[int, int]:
         """Return the number of subclasses and superclasses, in that order."""
         pass
