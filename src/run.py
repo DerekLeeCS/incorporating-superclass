@@ -32,7 +32,6 @@ if gpus:
 
 # Constants
 BATCH_SIZE = 64
-VALID_SIZE = 0.2
 NUM_EPOCHS = 100
 AUTOTUNE = tf.data.experimental.AUTOTUNE
 OPTIMIZER = tf.keras.optimizers.Adam()
