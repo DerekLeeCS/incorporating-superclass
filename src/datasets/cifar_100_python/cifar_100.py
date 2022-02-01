@@ -25,11 +25,6 @@ class CIFAR100(Dataset):
     _NUM_SUPERCLASSES = 20
     _IMG_SIZE = 32
 
-    def __init__(self):
-        self.preprocess = tf.keras.Sequential([
-            tf.keras.layers.Rescaling(1. / 255),  # Normalize the values to a range of [0, 1]
-        ])
-
     @staticmethod
     def _unpickle(file: str) -> Dict:
         """Process an uncompressed file from the CIFAR-100 dataset into a dictionary.
@@ -61,13 +56,17 @@ class CIFAR100(Dataset):
 
     def preprocess_tfrecord(self, file_name: Path) -> tf.data.TFRecordDataset:
         """Apply preprocessing to each element in the dataset and cache the results for future use."""
-        def preprocess_image(example: Dict) -> Dict:
-            example['image'] = self.preprocess(example['image'])
+        rescale = tf.keras.Sequential([
+            tf.keras.layers.Rescaling(1. / 255),  # Normalize the values to a range of [0, 1]
+        ])
+
+        def preprocess_example(example: Dict) -> Dict:
+            example['image'] = rescale(example['image'])
             return example
 
         return (
             TFRecordHandler.read_examples(str(file_name))
-                .map(preprocess_image, num_parallel_calls=AUTOTUNE)
+                .map(preprocess_example, num_parallel_calls=AUTOTUNE)
         )
 
     def get_data(self) -> Tuple[tf.data.TFRecordDataset, tf.data.TFRecordDataset, tf.data.TFRecordDataset]:
