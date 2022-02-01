@@ -41,8 +41,8 @@ class OxfordFlowers102(Dataset):
         with open(SUPERCLASS_MAPPINGS_FILE_NAME, 'rb') as f:
             self.subclass_to_superclass = pickle.load(f)
 
-        self._num_classes = len(self.subclass_to_superclass.keys())
-        self._num_superclasses = len(self.subclass_to_superclass.values())
+        self._num_classes = len(set(self.subclass_to_superclass.keys()))
+        self._num_superclasses = len(set(self.subclass_to_superclass.values()))
 
         # Get the mappings from image ids to image labels
         with open(self._file_image_labels, 'r') as f:
