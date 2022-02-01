@@ -6,7 +6,7 @@ from typing import Dict, Tuple
 
 import tensorflow as tf
 
-from superclass import SUPERCLASS_MAPPINGS_FILE_NAME
+from datasets.oxford_flowers_102.superclass import SUPERCLASS_MAPPINGS_FILE_NAME
 from datasets.dataset_interface import Dataset
 from tfrecord_handler import TFRecordHandler
 
@@ -49,11 +49,6 @@ class OxfordFlowers102(Dataset):
             image_labels = f.read().split(',')
             self.image_id_to_label = {k + 1: int(v) for k, v in enumerate(image_labels)}
 
-        # Used to preprocess the images
-        self.preprocess = tf.keras.Sequential([
-            tf.keras.layers.Rescaling(1. / 255),  # Normalize the values to a range of [0, 1]
-        ])
-
     @staticmethod
     def _get_file_name(image_id: str) -> str:
         """Get the file name corresponding to the provided image id. Remove any whitespace in the image_id (e.g. '\n').
@@ -88,8 +83,18 @@ class OxfordFlowers102(Dataset):
     def preprocess_tfrecord(self, dir_name: Path) -> tf.data.TFRecordDataset:
         """Apply preprocessing to each element in the dataset and cache the results for future use."""
 
-        def preprocess_image(example: Dict) -> Dict:
-            example['image'] = self.preprocess(example['image'])
+        resize_and_rescale = tf.keras.Sequential([
+            tf.keras.layers.Resizing(self._IMG_SIZE, self._IMG_SIZE),
+            tf.keras.layers.Rescaling(1. / 255),  # Normalize the values to a range of [0, 1]
+        ])
+
+        def preprocess_example(example: Dict) -> Dict:
+            example['image'] = resize_and_rescale(example['image'])
+
+            # Shift labels from (1 to N) to (0 to N-1) for the correct format for sparse categorical crossentropy
+            example['fine_label'] -= 1
+            example['coarse_label'] -= 1
+
             return example
 
         # Get the absolute path for every TFRecord in the directory
@@ -97,7 +102,7 @@ class OxfordFlowers102(Dataset):
 
         return (
             TFRecordHandler.read_examples(file_names)
-                .map(preprocess_image, num_parallel_calls=AUTOTUNE)
+                .map(preprocess_example, num_parallel_calls=AUTOTUNE)
         )
 
     def get_data(self) -> Tuple[tf.data.TFRecordDataset, tf.data.TFRecordDataset, tf.data.TFRecordDataset]:
@@ -111,18 +116,18 @@ class OxfordFlowers102(Dataset):
         return self._num_classes, self._num_superclasses
 
 
-# We ideally want each TFRecord to be ~100MB
+# We want 10 TFRecords per host, as long as each TFRecord is 100 MB+
 # https://www.tensorflow.org/tutorials/load_data/tfrecord
 def write_dataset_to_tfrecord():
     """Split the dataset into training, validation, and test sets. Write each to a TFRecord."""
     dataset = OxfordFlowers102()
 
-    def write_split_to_tfrecord(data_file_name: Path, dir_name: Path, num_chunks: int):
+    def write_split_to_tfrecord(data_file_name: Path, dir_name: Path, num_files: int):
         """Write a dataset split to a TFRecord.
 
         :param data_file_name: the name of the file that contains the raw data
         :param dir_name: the name of the directory to save the TFRecords to
-        :param num_chunks: the number of chunks to divide the data into, where each chunk is ~100MB
+        :param num_files: the number of files to divide the data into, where each chunk is 100 MB+
         """
         # Create the TFRecord directory if needed
         os.makedirs(dir_name, exist_ok=True)
@@ -131,7 +136,7 @@ def write_dataset_to_tfrecord():
 
         # Calculate the amount of data in each TFRecord
         n = len(data['data'])
-        chunk_size = math.ceil(n / num_chunks)
+        chunk_size = math.ceil(n / num_files)
 
         # Write the data to a TFRecord in chunks
         count = 1
@@ -143,7 +148,7 @@ def write_dataset_to_tfrecord():
             count += 1
 
     # Write each split to a TFRecord
-    write_split_to_tfrecord(dataset.FILE_TRAIN, dataset.DIR_TFRECORD_TRAIN, 60)
+    write_split_to_tfrecord(dataset.FILE_TRAIN, dataset.DIR_TFRECORD_TRAIN, 10)
     write_split_to_tfrecord(dataset.FILE_VALID, dataset.DIR_TFRECORD_VALID, 10)
     write_split_to_tfrecord(dataset.FILE_TEST, dataset.DIR_TFRECORD_TEST, 10)
 
