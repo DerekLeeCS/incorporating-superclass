@@ -35,7 +35,7 @@ _NAMES = [
 _SUBCLASS_COL_NAME = 'Class Name'
 _SUPERCLASS_COL_NAME = 'Subclass'
 
-SUPERCLASS_MAPPINGS_FILE_NAME = 'data/superclass_mappings.pkl'
+SUPERCLASS_MAPPINGS_FILE_NAME = Path(__file__, '../data/superclass_mappings.pkl')
 
 if __name__ == '__main__':
     # Create a mapping from label names to label ids for the subclass
