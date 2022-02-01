@@ -35,7 +35,7 @@ class OxfordFlowers102(Dataset):
     _file_image_labels = Path(__file__, '../data/labels.txt')
     _dir_image = Path(__file__, '../data/jpg')
 
-    _IMG_SIZE = 224
+    _IMG_SIZE = 144
 
     def __init__(self):
         with open(SUPERCLASS_MAPPINGS_FILE_NAME, 'rb') as f:

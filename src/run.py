@@ -4,6 +4,7 @@ import tensorflow as tf
 
 # Datasets
 from datasets.cifar_100_python.cifar_100 import CIFAR100
+from oxford_flowers_102.oxford_flowers_102 import OxfordFlowers102
 
 # Models
 from models.base_module import BaseModule
@@ -31,7 +32,7 @@ if gpus:
         print(e)
 
 # Constants
-BATCH_SIZE = 64
+BATCH_SIZE = 32
 NUM_EPOCHS = 100
 AUTOTUNE = tf.data.experimental.AUTOTUNE
 OPTIMIZER = tf.keras.optimizers.Adam()
@@ -55,7 +56,7 @@ def prepare_example(example: Dict) -> Tuple[tf.Tensor, Dict]:
 
 if __name__ == '__main__':
     # Get data
-    dataset = CIFAR100()
+    dataset = OxfordFlowers102()
     train_dataset, valid_dataset, test_dataset = dataset.get_data()
     img_size = dataset.get_image_size()
     num_classes, num_superclasses = dataset.get_num_classes()
