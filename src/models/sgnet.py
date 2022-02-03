@@ -27,9 +27,10 @@ class SGNet(BaseModule):
 
         # Auxiliary Classifier
         aux = x
-        aux = tf.keras.layers.Conv2D(2048, kernel_size=(1, 1), strides=(2, 2), padding='valid',
+        aux = tf.keras.layers.Conv2D(512, kernel_size=(2, 2), padding='valid',
                                      kernel_regularizer=ResidualBlock.regularizer)(aux)
-        aux = tf.keras.layers.AveragePooling2D((2, 2), padding='same')(aux)
+        aux = tf.keras.layers.Conv2D(512, kernel_size=(2, 2), padding='valid',
+                                     kernel_regularizer=ResidualBlock.regularizer)(aux)
         out_aux = tf.keras.layers.Flatten()(aux)
         out_aux = tf.keras.layers.Dense(num_superclasses, activation='softmax', name=self._output_coarse_name)(out_aux)
 
@@ -53,5 +54,5 @@ class SGNet(BaseModule):
 
         self.model = tf.keras.Model(inputs=inp, outputs=[out_main, out_aux])
         self.model.compile(optimizer=optimizer, loss=loss, metrics=metric,
-                           loss_weights={self._output_coarse_name: 0.5, self._output_fine_name: 1})
+                           loss_weights={self._output_coarse_name: 0.5, self._output_fine_name: 0.5})
         self.model.summary()
