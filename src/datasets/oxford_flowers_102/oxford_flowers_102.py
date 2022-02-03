@@ -32,8 +32,8 @@ class OxfordFlowers102(Dataset):
     DIR_TFRECORD_VALID = Path(__file__, '../data/valid/')
     DIR_TFRECORD_TEST = Path(__file__, '../data/test/')
 
-    _file_image_labels = Path(__file__, '../data/labels.txt')
-    _dir_image = Path(__file__, '../data/jpg')
+    _FILE_IMAGE_LABELS = Path(__file__, '../data/labels.txt')
+    _DIR_IMAGE = Path(__file__, '../data/jpg')
 
     _IMG_SIZE = 144
     _BATCH_SIZE = 32
@@ -46,7 +46,7 @@ class OxfordFlowers102(Dataset):
         self._num_superclasses = len(set(self.subclass_to_superclass.values()))
 
         # Get the mappings from image ids to image labels
-        with open(self._file_image_labels, 'r') as f:
+        with open(self._FILE_IMAGE_LABELS, 'r') as f:
             image_labels = f.read().split(',')
             self.image_id_to_label = {k + 1: int(v) for k, v in enumerate(image_labels)}
 
@@ -71,7 +71,7 @@ class OxfordFlowers102(Dataset):
             for image_id in image_ids:
                 # Read the image
                 image_file_name = OxfordFlowers102._get_file_name(image_id)
-                image_file_path = str(self._dir_image.joinpath(image_file_name))
+                image_file_path = str(self._DIR_IMAGE.joinpath(image_file_name))
                 dict_data['data'].append(load_image(image_file_path))
 
                 # Get the labels
