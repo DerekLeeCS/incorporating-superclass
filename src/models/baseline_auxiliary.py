@@ -27,7 +27,7 @@ class ResNet50WithAux(BaseModule):
 
         # Auxiliary Classifier
         aux = x
-        aux = tf.keras.layers.AveragePooling2D((2, 2))(aux)
+        aux = tf.keras.layers.GlobalAveragePooling2D(keepdims=True)(aux)
         aux = tf.keras.layers.Flatten()(aux)
         out_aux = tf.keras.layers.Dense(num_superclasses, activation='softmax', name=self._output_coarse_name)(aux)
 
