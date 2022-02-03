@@ -24,6 +24,7 @@ class CIFAR100(Dataset):
     _NUM_CLASSES = 100
     _NUM_SUPERCLASSES = 20
     _IMG_SIZE = 32
+    _BATCH_SIZE = 64
 
     @staticmethod
     def _unpickle(file: str) -> Dict:
@@ -72,6 +73,9 @@ class CIFAR100(Dataset):
     def get_data(self) -> Tuple[tf.data.TFRecordDataset, tf.data.TFRecordDataset, tf.data.TFRecordDataset]:
         return self.preprocess_tfrecord(self.FILE_TFRECORD_TRAIN), self.preprocess_tfrecord(self.FILE_TFRECORD_VALID), \
                self.preprocess_tfrecord(self.FILE_TFRECORD_TEST)
+
+    def get_batch_size(self) -> int:
+        return self._BATCH_SIZE
 
     def get_image_size(self) -> int:
         return self._IMG_SIZE

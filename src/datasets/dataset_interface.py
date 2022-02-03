@@ -13,6 +13,10 @@ class Dataset(abc.ABC):
         pass
 
     @abc.abstractmethod
+    def get_batch_size(self) -> int:
+        pass
+
+    @abc.abstractmethod
     def get_image_size(self) -> int:
         pass
 

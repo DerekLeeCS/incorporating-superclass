@@ -32,7 +32,6 @@ if gpus:
         print(e)
 
 # Constants
-BATCH_SIZE = 32
 NUM_EPOCHS = 100
 AUTOTUNE = tf.data.experimental.AUTOTUNE
 OPTIMIZER = tf.keras.optimizers.Adam()
@@ -58,6 +57,7 @@ if __name__ == '__main__':
     # Get data
     dataset = OxfordFlowers102()
     train_dataset, valid_dataset, test_dataset = dataset.get_data()
+    batch_size = dataset.get_batch_size()
     img_size = dataset.get_image_size()
     num_classes, num_superclasses = dataset.get_num_classes()
     num_train_examples = TFRecordHandler.count_size(train_dataset)
@@ -75,27 +75,27 @@ if __name__ == '__main__':
             .map(prepare_example, num_parallel_calls=AUTOTUNE)
             .cache()
             .shuffle(tf.cast(num_train_examples, tf.int64))
-            .batch(BATCH_SIZE)
+            .batch(batch_size)
             .map(lambda x, y: (augment(x, training=True), y), num_parallel_calls=AUTOTUNE)
             .prefetch(AUTOTUNE)
     )
     valid_dataset = (
         valid_dataset
-            .batch(BATCH_SIZE)
+            .batch(batch_size)
             .map(prepare_example, num_parallel_calls=AUTOTUNE)
             .cache()
             .prefetch(AUTOTUNE)
     )
     test_dataset = (
         test_dataset
-            .batch(BATCH_SIZE)
+            .batch(batch_size)
             .map(prepare_example, num_parallel_calls=AUTOTUNE)
             .cache()
             .prefetch(AUTOTUNE)
     )
 
     # Run model
-    module = MSGNet(num_classes, num_superclasses, img_size, LOSS, OPTIMIZER, METRIC)
+    module = SGNet(num_classes, num_superclasses, img_size, LOSS, OPTIMIZER, METRIC)
     if IS_TRAINING:
         module.train(train_dataset, valid_dataset, NUM_EPOCHS)
         module.load_weights()  # Ensure the best weights are used for saving

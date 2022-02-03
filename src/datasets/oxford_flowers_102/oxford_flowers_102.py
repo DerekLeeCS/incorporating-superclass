@@ -36,6 +36,7 @@ class OxfordFlowers102(Dataset):
     _dir_image = Path(__file__, '../data/jpg')
 
     _IMG_SIZE = 144
+    _BATCH_SIZE = 32
 
     def __init__(self):
         with open(SUPERCLASS_MAPPINGS_FILE_NAME, 'rb') as f:
@@ -108,6 +109,9 @@ class OxfordFlowers102(Dataset):
     def get_data(self) -> Tuple[tf.data.TFRecordDataset, tf.data.TFRecordDataset, tf.data.TFRecordDataset]:
         return self.preprocess_tfrecord(self.DIR_TFRECORD_TRAIN), self.preprocess_tfrecord(self.DIR_TFRECORD_VALID), \
                self.preprocess_tfrecord(self.DIR_TFRECORD_TEST)
+
+    def get_batch_size(self) -> int:
+        return self._BATCH_SIZE
 
     def get_image_size(self) -> int:
         return self._IMG_SIZE
