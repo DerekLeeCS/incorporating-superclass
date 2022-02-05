@@ -25,18 +25,17 @@ class SGNet(BaseModule):
         for _ in range(3):
             x = ResidualBlock(filters=(128, 512))(x)
 
-        # Auxiliary Classifier
-        aux = x
-        aux = ResidualBlock(filters=(128, 512), s=2)(aux)
-        aux = ResidualBlock(filters=(256, 1024), s=2)(aux)
-        aux = tf.keras.layers.AveragePooling2D((2, 2))(aux)
-        out_aux = tf.keras.layers.Flatten()(aux)
-        out_aux = tf.keras.layers.Dense(num_superclasses, activation='softmax', name=self._output_coarse_name)(out_aux)
-
         # Stage 3
         x = ResidualBlock(filters=(256, 1024), s=2)(x)
         for _ in range(5):
             x = ResidualBlock(filters=(256, 1024))(x)
+
+        # Auxiliary Classifier
+        aux = x
+        aux = ResidualBlock(filters=(256, 1024), s=2)(aux)
+        aux = tf.keras.layers.AveragePooling2D((2, 2))(aux)
+        out_aux = tf.keras.layers.Flatten()(aux)
+        out_aux = tf.keras.layers.Dense(num_superclasses, activation='softmax', name=self._output_coarse_name)(out_aux)
 
         # Stage 4
         x = ResidualBlock(filters=(512, 2048), s=2)(x)
