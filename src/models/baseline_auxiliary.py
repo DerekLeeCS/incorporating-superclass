@@ -42,7 +42,7 @@ class ResNet50WithAux(BaseModule):
             x = ResidualBlock(filters=(512, 2048))(x)
 
         # Pooling
-        x = tf.keras.layers.AveragePooling2D((2, 2), padding='same')(x)
+        x = tf.keras.layers.AveragePooling2D((2, 2))(x)
 
         # Output
         x = tf.keras.layers.Flatten()(x)
