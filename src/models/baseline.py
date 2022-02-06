@@ -73,10 +73,10 @@ class ResNet50(BaseModule):
         super().__init__()
         inp = tf.keras.layers.Input(shape=(img_size, img_size, 3))
 
-        x = tf.keras.layers.Conv2D(64, (7, 7), strides=(2, 2))(inp)
+        x = tf.keras.layers.Conv2D(64, (7, 7), strides=(2, 2), padding='same')(inp)
         x = tf.keras.layers.BatchNormalization()(x)
         x = tf.keras.layers.ReLU()(x)
-        x = tf.keras.layers.MaxPooling2D((3, 3), strides=(2, 2))(x)
+        x = tf.keras.layers.MaxPooling2D((3, 3), strides=(2, 2), padding='same')(x)
 
         # Stage 1
         x = ResidualBlock(filters=(64, 256), s=1)(x)
