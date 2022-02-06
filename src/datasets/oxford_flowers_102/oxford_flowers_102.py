@@ -35,7 +35,7 @@ class OxfordFlowers102(Dataset):
     _FILE_IMAGE_LABELS = Path(__file__, '../data/labels.txt')
     _DIR_IMAGE = Path(__file__, '../data/jpg')
 
-    _IMG_SIZE = 144
+    _IMG_SIZE = 128
     _BATCH_SIZE = 32
 
     def __init__(self):
