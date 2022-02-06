@@ -99,10 +99,9 @@ class ResNet50(BaseModule):
             x = ResidualBlock(filters=(512, 2048))(x)
 
         # Pooling
-        x = tf.keras.layers.AveragePooling2D((2, 2))(x)
+        x = tf.keras.layers.GlobalAveragePooling2D()(x)
 
         # Output
-        x = tf.keras.layers.Flatten()(x)
         out = tf.keras.layers.Dense(num_classes, activation='softmax', name=self._output_fine_name)(x)
 
         self.model = tf.keras.Model(inputs=inp, outputs=out)
