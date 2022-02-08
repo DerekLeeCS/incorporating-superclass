@@ -4,67 +4,49 @@ import tensorflow as tf
 
 from models.base_module import BaseModule
 
+REGULARIZER = tf.keras.regularizers.l2(1e-3)
 
-class ResidualBlock(tf.keras.Model):
-    """Residual Block for a ResNet with Full Pre-activation"""
 
-    regularizer = tf.keras.regularizers.l2(1e-3)
+def residual_block(input_tensor: tf.Tensor, filters: Tuple[int, int], s: int = 1,
+                   conv_shortcut: bool = False) -> tf.Tensor:
+    f1, f2 = filters
+    k = 3  # Kernel size
 
-    def __init__(self, filters: Tuple[int, int], s: int = None):
-        super(ResidualBlock, self).__init__()
-        f1, f2 = filters
-        k = 3  # Kernel size
+    pre_act = tf.keras.layers.BatchNormalization()(input_tensor)
+    pre_act = tf.keras.layers.ReLU()(pre_act)
 
-        if s is not None:
-            self.downsample = True
-            self.conv2a = tf.keras.layers.Conv2D(f1, kernel_size=(1, 1), strides=(s, s), padding='valid',
-                                                 kernel_regularizer=self.regularizer)
-            self.conv2Shortcut = tf.keras.layers.Conv2D(f2, kernel_size=(1, 1), strides=(s, s), padding='valid',
-                                                        kernel_regularizer=self.regularizer)
-            self.bn2Shortcut = tf.keras.layers.BatchNormalization()
-        else:
-            self.downsample = False
-            self.conv2a = tf.keras.layers.Conv2D(f1, kernel_size=(1, 1), strides=(1, 1), padding='valid',
-                                                 kernel_regularizer=self.regularizer)
+    if conv_shortcut:
+        x_short = tf.keras.layers.Conv2D(f2, kernel_size=(1, 1), strides=(s, s),
+                                         kernel_regularizer=REGULARIZER)(pre_act)
+    else:
+        x_short = tf.keras.layers.MaxPooling2D((1, 1), strides=(s, s))(input_tensor) if s > 1 else input_tensor
 
-        self.bn2a = tf.keras.layers.BatchNormalization()
+    # Block 1
+    x = tf.keras.layers.Conv2D(f1, kernel_size=(1, 1), strides=(1, 1), kernel_regularizer=REGULARIZER)(pre_act)
 
-        self.conv2b = tf.keras.layers.Conv2D(f1, kernel_size=(k, k), strides=(1, 1), padding='same',
-                                             kernel_regularizer=self.regularizer)
-        self.bn2b = tf.keras.layers.BatchNormalization()
+    # Block 2
+    x = tf.keras.layers.BatchNormalization()(x)
+    x = tf.keras.layers.ReLU()(x)
+    x = tf.keras.layers.Conv2D(f1, kernel_size=(k, k), strides=(s, s), padding='same',
+                               kernel_regularizer=REGULARIZER)(x)
 
-        self.conv2c = tf.keras.layers.Conv2D(f2, kernel_size=(1, 1), strides=(1, 1), padding='valid',
-                                             kernel_regularizer=self.regularizer)
-        self.bn2c = tf.keras.layers.BatchNormalization()
+    # Block 3
+    x = tf.keras.layers.BatchNormalization()(x)
+    x = tf.keras.layers.ReLU()(x)
+    x = tf.keras.layers.Conv2D(f2, kernel_size=(1, 1), strides=(1, 1), kernel_regularizer=REGULARIZER)(x)
 
-    def call(self, input_tensor: tf.Tensor, training: bool = False, **kwargs):
-        x = input_tensor
-        x_short = input_tensor
+    # Output
+    x += x_short
 
-        if self.downsample:
-            x_short = self.bn2Shortcut(x_short, training=training)
-            x_short = tf.keras.layers.ReLU()(x_short)
-            x_short = self.conv2Shortcut(x_short)
+    return x
 
-        # Block 1
-        x = self.bn2a(x, training=training)
-        x = tf.keras.layers.ReLU()(x)
-        x = self.conv2a(x)
 
-        # Block 2
-        x = self.bn2b(x, training=training)
-        x = tf.keras.layers.ReLU()(x)
-        x = self.conv2b(x)
-
-        # Block 3
-        x = self.bn2c(x, training=training)
-        x = tf.keras.layers.ReLU()(x)
-        x = self.conv2c(x)
-
-        # Output
-        x += x_short
-
-        return x
+def stack_blocks(x: tf.Tensor, filters: Tuple[int, int], num_blocks: int, s: int = 2) -> tf.Tensor:
+    x = residual_block(x, filters, conv_shortcut=True)
+    for _ in range(2, num_blocks):
+        x = residual_block(x, filters)
+    x = residual_block(x, filters, s)
+    return x
 
 
 class ResNet50(BaseModule):
@@ -73,36 +55,29 @@ class ResNet50(BaseModule):
         super().__init__()
         inp = tf.keras.layers.Input(shape=(img_size, img_size, 3))
 
-        x = tf.keras.layers.Conv2D(64, (7, 7), strides=(2, 2), padding='same')(inp)
-        x = tf.keras.layers.BatchNormalization()(x)
-        x = tf.keras.layers.ReLU()(x)
+        x = tf.keras.layers.Conv2D(64, (7, 7), strides=(2, 2), padding='same', kernel_regularizer=REGULARIZER)(inp)
         x = tf.keras.layers.MaxPooling2D((3, 3), strides=(2, 2), padding='same')(x)
 
         # Stage 1
-        x = ResidualBlock(filters=(64, 256), s=1)(x)
-        for _ in range(2):
-            x = ResidualBlock(filters=(64, 256))(x)
+        x = stack_blocks(x, filters=(64, 256), num_blocks=3)
 
         # Stage 2
-        x = ResidualBlock(filters=(128, 512), s=2)(x)
-        for _ in range(3):
-            x = ResidualBlock(filters=(128, 512))(x)
+        x = stack_blocks(x, filters=(128, 512), num_blocks=4)
 
         # Stage 3
-        x = ResidualBlock(filters=(256, 1024), s=2)(x)
-        for _ in range(5):
-            x = ResidualBlock(filters=(256, 1024))(x)
+        x = stack_blocks(x, filters=(256, 1024), num_blocks=6)
 
         # Stage 4
-        x = ResidualBlock(filters=(512, 2048), s=2)(x)
-        for _ in range(2):
-            x = ResidualBlock(filters=(512, 2048))(x)
+        x = stack_blocks(x, filters=(512, 2048), num_blocks=3)
 
         # Pooling
+        x = tf.keras.layers.BatchNormalization()(x)
+        x = tf.keras.layers.ReLU()(x)
         x = tf.keras.layers.GlobalAveragePooling2D()(x)
 
         # Output
-        out = tf.keras.layers.Dense(num_classes, activation='softmax', name=self._output_fine_name)(x)
+        out = tf.keras.layers.Dense(num_classes, activation='softmax', kernel_regularizer=REGULARIZER,
+                                    name=self._output_fine_name)(x)
 
         self.model = tf.keras.Model(inputs=inp, outputs=out)
         self.model.compile(optimizer=optimizer, loss=loss, metrics=metric)
