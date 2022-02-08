@@ -36,7 +36,7 @@ NUM_EPOCHS = 100
 AUTOTUNE = tf.data.experimental.AUTOTUNE
 OPTIMIZER = tf.keras.optimizers.Adam()
 LOSS = tf.keras.losses.SparseCategoricalCrossentropy()
-METRIC = tf.keras.metrics.SparseTopKCategoricalAccuracy(k=5)
+METRIC = tf.keras.metrics.SparseCategoricalAccuracy()
 IS_TRAINING = True
 
 
