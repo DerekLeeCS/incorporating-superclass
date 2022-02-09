@@ -49,7 +49,7 @@ def stack_blocks(x: tf.Tensor, filters: Tuple[int, int], num_blocks: int, s: int
     return x
 
 
-class ResNet50(BaseModule):
+class ResNet50v2(BaseModule):
     def __init__(self, num_classes: int, img_size: int, loss: tf.keras.losses.Loss,
                  optimizer: tf.keras.optimizers.Optimizer, metric: tf.keras.metrics.Metric):
         super().__init__()

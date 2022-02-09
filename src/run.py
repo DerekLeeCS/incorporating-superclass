@@ -8,7 +8,7 @@ from oxford_flowers_102.oxford_flowers_102 import OxfordFlowers102
 
 # Models
 from models.base_module import BaseModule
-from models.baseline import ResNet50
+from models.baseline import ResNet50v2
 from models.baseline_auxiliary import ResNet50WithAux
 from models.msgnet import MSGNet
 from models.sgnet import SGNet
