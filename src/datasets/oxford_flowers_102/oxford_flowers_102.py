@@ -45,11 +45,6 @@ class OxfordFlowers102(Dataset):
         self._num_classes = len(set(self.subclass_to_superclass.keys()))
         self._num_superclasses = len(set(self.subclass_to_superclass.values()))
 
-        # Get the mappings from image ids to image labels
-        with open(self._FILE_IMAGE_LABELS, 'r') as f:
-            image_labels = f.read().split(',')
-            self.image_id_to_label = {k + 1: int(v) for k, v in enumerate(image_labels)}
-
     @staticmethod
     def _get_file_name(image_id: str) -> str:
         """Get the file name corresponding to the provided image id. Remove any whitespace in the image_id (e.g. '\n').
@@ -66,6 +61,11 @@ class OxfordFlowers102(Dataset):
             'data': []
         }
 
+        # Get the mappings from image ids to image labels
+        with open(self._FILE_IMAGE_LABELS, 'r') as f:
+            image_labels = f.read().split(',')
+            image_id_to_label = {k + 1: int(v) for k, v in enumerate(image_labels)}
+
         with open(file_name, 'r') as f:
             image_ids = f.read().split(',')
             for image_id in image_ids:
@@ -75,7 +75,7 @@ class OxfordFlowers102(Dataset):
                 dict_data['data'].append(load_image(image_file_path))
 
                 # Get the labels
-                fine_label = self.image_id_to_label[int(image_id)]
+                fine_label = image_id_to_label[int(image_id)]
                 dict_data['fine_labels'].append(fine_label)
                 dict_data['coarse_labels'].append(self.subclass_to_superclass[fine_label])
 
