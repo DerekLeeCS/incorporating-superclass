@@ -23,6 +23,8 @@ class SGNet(BaseModule):
         aux = x
         aux = residual_block(aux, filters=(256, 1024), conv_shortcut=True)
         aux = residual_block(aux, filters=(256, 1024), s=2)
+        aux = tf.keras.layers.BatchNormalization()(aux)
+        aux = tf.keras.layers.ReLU()(aux)
         aux = tf.keras.layers.AveragePooling2D((2, 2))(aux)
         out_aux = tf.keras.layers.Flatten()(aux)
         out_aux = tf.keras.layers.Dense(num_superclasses, activation='softmax', kernel_regularizer=REGULARIZER,
