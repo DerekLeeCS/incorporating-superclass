@@ -81,9 +81,6 @@ class SCINet(BaseModule):
         # Stage 2
         x = stack_blocks(x, filters=(128, 512), num_blocks=4)
 
-        # Stage 3
-        x = stack_blocks(x, filters=(256, 1024), num_blocks=6)
-
         # Auxiliary Classifier
         aux = x
         aux = tf.keras.layers.BatchNormalization()(aux)
@@ -94,11 +91,13 @@ class SCINet(BaseModule):
 
         # Superclass Conditional Instance Normalization
         super_ind = tf.argmax(out_aux, axis=-1)
-        # x = SCIN(num_superclasses, 1024)(x, super_ind)
+
+        # Stage 3
+        x = stack_blocks(x, filters=(256, 1024), num_blocks=6)
 
         # Stage 4
         x = residual_block_with_scin((x, super_ind), num_superclasses=num_superclasses, num_channels=1024)
-        # x = stack_blocks(x, filters=(512, 2048), num_blocks=3)
+        x = stack_blocks(x, filters=(512, 2048), num_blocks=2)
 
         # Pooling
         x = tf.keras.layers.BatchNormalization()(x)
