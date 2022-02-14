@@ -24,6 +24,7 @@ class ResNet50WithAux(BaseModule):
         aux = tf.keras.layers.BatchNormalization()(aux)
         aux = tf.keras.layers.ReLU()(aux)
         aux = tf.keras.layers.GlobalAveragePooling2D()(aux)
+        aux = tf.keras.layers.Dense(256, activation='relu', kernel_regularizer=REGULARIZER)(aux)
         out_aux = tf.keras.layers.Dense(num_superclasses, activation='softmax', kernel_regularizer=REGULARIZER,
                                         name=self._output_coarse_name)(aux)
 
