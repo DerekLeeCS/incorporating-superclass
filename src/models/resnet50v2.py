@@ -2,9 +2,7 @@ from typing import Tuple
 
 import tensorflow as tf
 
-from models.base_module import BaseModule
-
-REGULARIZER = tf.keras.regularizers.l2(1e-3)
+from models.base_module import BaseModule, REGULARIZER
 
 
 def residual_block(input_tensor: tf.Tensor, filters: Tuple[int, int], s: int = 1,

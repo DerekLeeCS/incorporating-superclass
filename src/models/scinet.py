@@ -2,8 +2,8 @@ from typing import Tuple
 
 import tensorflow as tf
 
-from models.baseline import stack_blocks, REGULARIZER
-from models.base_module import BaseModule
+from models.resnet50v2 import stack_blocks
+from models.base_module import BaseModule, REGULARIZER
 
 
 class SCIN(tf.keras.layers.Layer):

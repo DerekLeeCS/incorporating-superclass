@@ -2,6 +2,8 @@ import datetime
 
 import tensorflow as tf
 
+REGULARIZER = tf.keras.regularizers.l2(1e-3)
+
 
 class BaseModule(tf.Module):
     checkpoint_path = 'checkpoints/'
