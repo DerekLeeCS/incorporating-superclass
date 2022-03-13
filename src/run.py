@@ -11,7 +11,7 @@ from models.base_module import BaseModule
 from models.resnet50v1 import ResNet50v1
 from models.resnet50v2 import ResNet50v2
 from models.baseline_auxiliary import ResNet50WithAux
-from models.msgnet import MSGNet
+from models.resgnet import ReSGNet
 from models.sgnet import SGNet
 from models.scinet import SCINet
 
@@ -96,7 +96,7 @@ if __name__ == '__main__':
     )
 
     # Run model
-    module = SGNet(num_classes, num_superclasses, img_size, LOSS, OPTIMIZER, METRIC)
+    module = ReSGNet(num_classes, num_superclasses, img_size, LOSS, OPTIMIZER, METRIC)
     if IS_TRAINING:
         module.train(train_dataset, valid_dataset, NUM_EPOCHS)
         module.load_weights()  # Ensure the best weights are used for saving
