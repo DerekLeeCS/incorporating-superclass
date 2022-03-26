@@ -6,14 +6,15 @@ from models.resnet50v2 import stack_blocks
 from models.base_module import BaseModule, REGULARIZER
 
 
-class SCIN(tf.keras.layers.Layer):
-    """Perform Superclass Conditional Instance Normalization."""
+class CIN(tf.keras.layers.Layer):
+    """Perform Conditional Instance Normalization."""
+
     def __init__(self, num_superclasses: int, num_channels: int):
         super().__init__()
 
-        self.gamma = tf.Variable(tf.random.normal(shape=(num_superclasses, num_channels), mean=0, stddev=0.5),
+        self.gamma = tf.Variable(tf.random.normal(shape=(num_superclasses, num_channels), mean=0, stddev=1),
                                  dtype=tf.float32, trainable=True)
-        self.beta = tf.Variable(tf.random.normal(shape=(num_superclasses, num_channels), mean=0, stddev=0.5),
+        self.beta = tf.Variable(tf.random.normal(shape=(num_superclasses, num_channels), mean=0, stddev=1),
                                 dtype=tf.float32, trainable=True)
 
     def get_config(self):
@@ -45,24 +46,47 @@ class SCIN(tf.keras.layers.Layer):
         return x
 
 
-def residual_block_with_scin(inputs: Tuple[tf.Tensor, int], num_superclasses: int, num_channels: int) -> tf.Tensor:
-    """
-    :param inputs: a tuple containing the input tensor and the sparse superclass prediction
-    :param num_superclasses: the number of superclasses in the dataset
-    :param num_channels: the number of channels in the input
-    :return: the output of the residual block
-    """
+def residual_block_with_cin(inputs: Tuple[tf.Tensor, int], num_superclasses: int, filters: Tuple[int, int], s: int = 1,
+                            conv_shortcut: bool = False) -> tf.Tensor:
     input_tensor, super_ind = inputs
+    f1, f2 = filters
+    k = 3  # Kernel size
 
     pre_act = tf.keras.layers.BatchNormalization()(input_tensor)
     pre_act = tf.keras.layers.ReLU()(pre_act)
 
-    x_short = input_tensor
-    x = SCIN(num_superclasses, num_channels)(pre_act, super_ind)
+    if conv_shortcut:
+        x_short = tf.keras.layers.Conv2D(f2, kernel_size=(1, 1), strides=(s, s),
+                                         kernel_regularizer=REGULARIZER)(pre_act)
+    else:
+        x_short = tf.keras.layers.MaxPooling2D((1, 1), strides=(s, s))(input_tensor) if s > 1 else input_tensor
+
+    # Block 1
+    x = tf.keras.layers.Conv2D(f1, kernel_size=(1, 1), strides=(1, 1), kernel_regularizer=REGULARIZER)(pre_act)
+
+    # Block 2
+    x = tf.keras.layers.BatchNormalization()(x)
+    x = tf.keras.layers.ReLU()(x)
+    x = tf.keras.layers.Conv2D(f1, kernel_size=(k, k), strides=(s, s), padding='same',
+                               kernel_regularizer=REGULARIZER)(x)
+
+    # Block 3
+    x = CIN(num_superclasses, f1)(x, super_ind)
+    x = tf.keras.layers.ReLU()(x)
+    x = tf.keras.layers.Conv2D(f2, kernel_size=(1, 1), strides=(1, 1), kernel_regularizer=REGULARIZER)(x)
 
     # Output
     x += x_short
 
+    return x
+
+
+def stack_cin_blocks(x: tf.Tensor, super_ind: int, num_superclasses: int, filters: Tuple[int, int], num_blocks: int,
+                     s: int = 2) -> tf.Tensor:
+    x = residual_block_with_cin((x, super_ind), num_superclasses, filters, conv_shortcut=True)
+    for _ in range(2, num_blocks):
+        x = residual_block_with_cin((x, super_ind), num_superclasses, filters)
+    x = residual_block_with_cin((x, super_ind), num_superclasses, filters, s)
     return x
 
 
@@ -93,11 +117,10 @@ class SCINet(BaseModule):
         super_ind = tf.argmax(out_aux, axis=-1)
 
         # Stage 3
-        x = stack_blocks(x, filters=(256, 1024), num_blocks=6)
+        x = stack_cin_blocks(x, super_ind, num_superclasses, filters=(256, 1024), num_blocks=6)
 
         # Stage 4
-        x = residual_block_with_scin((x, super_ind), num_superclasses=num_superclasses, num_channels=1024)
-        x = stack_blocks(x, filters=(512, 2048), num_blocks=2)
+        x = stack_cin_blocks(x, super_ind, num_superclasses, filters=(512, 2048), num_blocks=3)
 
         # Pooling
         x = tf.keras.layers.BatchNormalization()(x)
