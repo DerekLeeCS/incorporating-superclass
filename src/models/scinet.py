@@ -2,7 +2,7 @@ from typing import Tuple
 
 import tensorflow as tf
 
-from models.resnet50v2 import stack_blocks
+from models.resnet50v2 import stack_blocks, residual_block
 from models.base_module import BaseModule, REGULARIZER
 
 
@@ -85,8 +85,8 @@ def stack_cin_blocks(x: tf.Tensor, super_ind: int, num_superclasses: int, filter
                      s: int = 2) -> tf.Tensor:
     x = residual_block_with_cin((x, super_ind), num_superclasses, filters, conv_shortcut=True)
     for _ in range(2, num_blocks):
-        x = residual_block_with_cin((x, super_ind), num_superclasses, filters)
-    x = residual_block_with_cin((x, super_ind), num_superclasses, filters, s)
+        x = residual_block(x, filters)
+    x = residual_block(x, filters, s)
     return x
 
 
@@ -117,7 +117,7 @@ class SCINet(BaseModule):
         super_ind = tf.argmax(out_aux, axis=-1)
 
         # Stage 3
-        x = stack_cin_blocks(x, super_ind, num_superclasses, filters=(256, 1024), num_blocks=6)
+        x = stack_blocks(x, filters=(256, 1024), num_blocks=6)
 
         # Stage 4
         x = stack_cin_blocks(x, super_ind, num_superclasses, filters=(512, 2048), num_blocks=3)
