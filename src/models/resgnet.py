@@ -31,7 +31,7 @@ class ReSGNet(BaseModule):
         x = stack_blocks(x, filters=(256, 1024), num_blocks=6)
 
         # Stage 4
-        x = stack_blocks(x, filters=(512, 2048), num_blocks=3)
+        x = stack_blocks(x, filters=(512, 2048), s=1, num_blocks=3)
 
         # Pooling
         x = tf.keras.layers.BatchNormalization()(x)

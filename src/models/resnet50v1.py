@@ -58,7 +58,7 @@ class ResNet50v1(BaseModule):
         x = tf.keras.layers.MaxPooling2D((3, 3), strides=(2, 2), padding='same')(x)
 
         # Stage 1
-        x = stack_blocks(x, filters=(64, 256), num_blocks=3)
+        x = stack_blocks(x, filters=(64, 256), s=1, num_blocks=3)
 
         # Stage 2
         x = stack_blocks(x, filters=(128, 512), num_blocks=4)

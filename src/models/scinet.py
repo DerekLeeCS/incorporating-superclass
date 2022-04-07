@@ -85,8 +85,11 @@ def stack_cin_blocks(x: tf.Tensor, super_ind: int, num_superclasses: int, filter
                      s: int = 2) -> tf.Tensor:
     x = residual_block_with_cin((x, super_ind), num_superclasses, filters, conv_shortcut=True)
     for _ in range(2, num_blocks):
-        x = residual_block(x, filters)
-    x = residual_block(x, filters, s)
+        x = residual_block_with_cin((x, super_ind), num_superclasses, filters)
+    x = residual_block_with_cin((x, super_ind), num_superclasses, filters, s)
+    # for _ in range(2, num_blocks):
+    #     x = residual_block(x, filters)
+    # x = residual_block(x, filters, s)
     return x
 
 
@@ -117,10 +120,12 @@ class SCINet(BaseModule):
         super_ind = tf.argmax(out_aux, axis=-1)
 
         # Stage 3
-        x = stack_blocks(x, filters=(256, 1024), num_blocks=6)
+        x = stack_cin_blocks(x, super_ind, num_superclasses, filters=(256, 1024), num_blocks=6)
+        # x = stack_blocks(x, filters=(256, 1024), num_blocks=6)
 
         # Stage 4
-        x = stack_cin_blocks(x, super_ind, num_superclasses, filters=(512, 2048), num_blocks=3)
+        x = stack_cin_blocks(x, super_ind, num_superclasses, filters=(512, 2048), s=1, num_blocks=3)
+        # x = stack_blocks(x, filters=(512, 2048), s=1, num_blocks=2)
 
         # Pooling
         x = tf.keras.layers.BatchNormalization()(x)

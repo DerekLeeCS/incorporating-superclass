@@ -22,7 +22,6 @@ class SGNet(BaseModule):
         # Auxiliary Classifier
         aux = x
         aux = residual_block(aux, filters=(256, 1024), conv_shortcut=True)
-        aux = residual_block(aux, filters=(256, 1024), s=2)
         aux = tf.keras.layers.BatchNormalization()(aux)
         aux = tf.keras.layers.ReLU()(aux)
         aux = tf.keras.layers.AveragePooling2D((2, 2))(aux)
@@ -34,7 +33,7 @@ class SGNet(BaseModule):
         x = stack_blocks(x, filters=(256, 1024), num_blocks=6)
 
         # Stage 4
-        x = stack_blocks(x, filters=(512, 2048), num_blocks=3)
+        x = stack_blocks(x, filters=(512, 2048), s=1, num_blocks=3)
 
         # Pooling
         x = tf.concat([x, aux], -1)
