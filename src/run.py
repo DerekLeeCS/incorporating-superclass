@@ -15,10 +15,10 @@ from models.resgnet import ReSGNet
 from models.sgnet import SGNet
 from models.scinet import SCINet
 
-# From:
-# https://www.tensorflow.org/guide/gpu#limiting_gpu_memory_growth
 from tfrecord_handler import TFRecordHandler
 
+# From:
+# https://www.tensorflow.org/guide/gpu#limiting_gpu_memory_growth
 gpus = tf.config.experimental.list_physical_devices('GPU')
 if gpus:
     # Restrict TensorFlow to only allocate 4GB of memory on the first GPU
