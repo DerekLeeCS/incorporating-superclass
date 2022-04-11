@@ -46,7 +46,7 @@ class BaseModule(tf.Module):
 
     def save(self):
         """Save the model in the saved_model_path directory under a directory named after the class.
-        E.g. For the ResNet50 class, <saved_model_path>/ResNet50/
+        E.g. For the ResNet50v1 class, <saved_model_path>/ResNet50v1/
         """
         self.model.save(self.saved_model_path + type(self).__name__ + '/')
 
