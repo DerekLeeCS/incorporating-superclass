@@ -4,7 +4,8 @@ import tensorflow as tf
 
 # Datasets
 from datasets.cifar_100_python.cifar_100 import CIFAR100
-from oxford_flowers_102.oxford_flowers_102 import OxfordFlowers102
+from datasets.oxford_flowers_102.oxford_flowers_102 import OxfordFlowers102
+from datasets.tfrecord_handler import TFRecordHandler
 
 # Models
 from models.base_module import BaseModule
@@ -14,8 +15,6 @@ from models.basic_auxiliary import ResNet50WithAux
 from models.resgnet import ReSGNet
 from models.sgnet import SGNet
 from models.scinet import SCINet
-
-from tfrecord_handler import TFRecordHandler
 
 # From:
 # https://www.tensorflow.org/guide/gpu#limiting_gpu_memory_growth

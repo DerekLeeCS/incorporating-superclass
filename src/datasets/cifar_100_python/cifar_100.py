@@ -6,8 +6,8 @@ import numpy as np
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
 
-from tfrecord_handler import TFRecordHandler
 from datasets.dataset_interface import Dataset
+from datasets.tfrecord_handler import TFRecordHandler
 
 VALID_SIZE = 0.2
 AUTOTUNE = tf.data.experimental.AUTOTUNE

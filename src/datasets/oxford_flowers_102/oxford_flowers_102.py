@@ -8,7 +8,7 @@ import tensorflow as tf
 
 from datasets.oxford_flowers_102.superclass import SUPERCLASS_MAPPINGS_FILE_NAME
 from datasets.dataset_interface import Dataset
-from tfrecord_handler import TFRecordHandler
+from datasets.tfrecord_handler import TFRecordHandler
 
 AUTOTUNE = tf.data.experimental.AUTOTUNE
 
